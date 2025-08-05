@@ -13,7 +13,7 @@
 This is the official repository for our paper "Chain-of-Agents: End-to-End Agent Foundation Models via Multi-Agent Distillation and Agentic RL". Our work introduces a novel paradigm for LLM reasoning that enables end-to-end complex problem-solving within a single model, simulating multi-agent collaboration through dynamic activation of tool agents and role-playing agents.
 
 <div align="center">
-  <img src="./assets/afm.pdf" width="85%" height="auto" />
+  <img src="./assets/afm.png" width="85%" height="auto" />
 </div>
 
 ## Overview
