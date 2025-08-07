@@ -5,6 +5,7 @@
 </div>
 
 <div align="center">
+  <a href='https://chain-of-agents-afm.github.io/'><img src='https://img.shields.io/badge/Project-Github-red?logo=GitHub&logoWidth=40'></a>
   <a href='https://arxiv.org/abs/'><img src='https://img.shields.io/badge/Paper AFM-arXiv-d63031?logo=arxiv&logoColor=white'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-689200e11d0b21a67c015ba8'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Models-Huggingface-yellow'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-datasets-6892140eaad360ea5ccdcde1'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Huggingface-yellow'></a>
