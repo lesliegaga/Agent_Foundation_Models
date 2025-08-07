@@ -38,11 +38,11 @@ VAL_DATASETS="your val datasets"
 #                                      Tool
 # =====================================================================================================================
 # code tool
-CODE_CONFIG="./verl/tools/config/code_tool_config/code_executor.yaml"
+CODE_CONFIG="${CURRENT_DIR}/verl/tools/config/code_tool_config/code_executor.yaml"
 # search tools
-SEARCH_CONFIG="./verl/tools/config/search_tool_config/training_servers_config.yaml"
+SEARCH_CONFIG="${CURRENT_DIR}/verl/tools/config/search_tool_config/training_servers_config.yaml"
 # afm tools
-AFM_CONFIG="./verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
+AFM_CONFIG="${CURRENT_DIR}/verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
 # =====================================================================================================================
 #                                      Train
 # =====================================================================================================================
@@ -96,8 +96,8 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.default_hdfs_dir=null \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=$NNODES \
-    trainer.save_freq=20 \
-    trainer.test_freq=20 \
+    trainer.save_freq=5 \
+    trainer.test_freq=5 \
     trainer.project_name=$WAND_PROJECT \
     trainer.experiment_name=$EXPERIMENT_NAME \
     trainer.total_epochs="${EPOCHS}" \
@@ -110,5 +110,4 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.multi_turn.use_xml_tool_parser=true \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$CHOSE_YOUR_TOOL" \
     reward_model.reward_manager="afm" \
-    curriculum_learning.enable=true \
     2>&1 | tee logs/$EXPERIMENT_NAME.log

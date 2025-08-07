@@ -290,7 +290,7 @@ def llm_judge_single_sync(question: str, pred_answer: str, gt_answer: str, max_r
     Returns:
         Score: 1.0 if correct, 0.0 if incorrect
     """
-    do_print = random.randint(1, 1) == 1
+    do_print = random.randint(1, 64) == 1
     
     formatted_prompt = LLM_EVALUATION_PROMPT_TEMPLATE.format(
         question=question,

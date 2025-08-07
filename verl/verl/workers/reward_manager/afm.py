@@ -40,7 +40,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 from verl.workers.reward_manager import register
 def _select_rm_score_fn(data_source):
-    if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle','mercury']:
+    if data_source in ['nq', 'triviaqa', 'popqa', 'hotpotqa', '2wikimultihopqa', 'musique', 'bamboogle','mercury', 'tq']:
         return qa_em.compute_score_em
     elif data_source in ['math_dapo','aime24','aime25','MATH','MATH500','gms8k','amc23','OlympiadBench']:
         return mathverify.compute_score

@@ -35,8 +35,7 @@ from .processor import (
     PretrainDatasetProcessor,
     SupervisedDatasetProcessor,
     UnsupervisedDatasetProcessor,
-    IgnoreObsSupervisedDatasetProcessor,
-    IgnoreObsUnsupervisedDatasetProcessor
+    IgnoreObsSupervisedDatasetProcessor
 )
 
 
@@ -235,10 +234,7 @@ def _get_dataset_processor(
     elif stage == "kto":
         dataset_processor_class = FeedbackDatasetProcessor
     else:
-        if data_args.ignore_observation:
-            dataset_processor_class = IgnoreObsUnsupervisedDatasetProcessor
-        else:
-            dataset_processor_class = UnsupervisedDatasetProcessor
+        dataset_processor_class = UnsupervisedDatasetProcessor
 
     return dataset_processor_class(template=template, tokenizer=tokenizer, processor=processor, data_args=data_args)
 

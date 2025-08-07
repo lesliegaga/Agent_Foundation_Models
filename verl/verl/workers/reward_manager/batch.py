@@ -42,7 +42,6 @@ class BatchRewardManager:
         responses_str = []
         trajectories_str = []
         prompts_str=[]
-        questions = [info['question'] for info in data.non_tensor_batch['extra_info']]
         for i in range(len(data)):
             valid_len = valid_response_lengths[i]
             valid_response_ids = response_ids[i][:valid_len]
@@ -56,13 +55,12 @@ class BatchRewardManager:
         ground_truths = [item.non_tensor_batch["reward_model"].get("ground_truth", None) for item in data]
         data_sources = data.non_tensor_batch[self.reward_fn_key]
         extras = data.non_tensor_batch.get("extra_info", [None] * len(data))
-        
+
         scores = self.compute_score(
-            questions=questions,
-            ground_truths=ground_truths,
-            responses=responses_str,
             data_sources=data_sources,
-            prompts=prompts_str,
+            prompt_strs=prompts_str,
+            solution_strs=responses_str,
+            ground_truths=ground_truths,
             extra_infos=extras,
             **self.reward_kwargs,
         )

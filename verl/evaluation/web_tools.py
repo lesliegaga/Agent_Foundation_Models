@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+# coding=utf-8
+# Copyright 2025 The OPPO Inc. Personal AI team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
@@ -112,7 +128,7 @@ def extract_last_tag(text, start_tag, end_tag):
     return text[start_index:end_index]
 
 
-def CrawlPageTool(crawl_page_url, api_key, api_url, model, task, urls, history, save_only_one_url):
+def CrawlPageTool(crawl_page_url, api_key, api_url, model, task, urls, history):
     if isinstance(urls, str):
         urls = urls.split("|")
     # think_content
@@ -122,15 +138,17 @@ def CrawlPageTool(crawl_page_url, api_key, api_url, model, task, urls, history, 
     selected_url_key_group = random.choice(api_pairs)
     data = {
         "urls": urls,
-        # "task": task, 
         "web_search_query": web_search_query,
         "think_content": think_content,
         "api_url": selected_url_key_group["api_url"],
         "api_key": selected_url_key_group["api_key"],
         "model": model,
-        "summary_prompt_type": "webthinker_with_goal",
+        "summary_prompt_type": "webthinker_with_goal", # support webthinker or webthinker_with_goal
         "summary_type": "page",
         "jina_key": jina_key,
+        "task": "", 
+        "chunk_size": 8192,
+        "do_last_summary": False,
     }
     headers = {"Content-Type": "application/json"}
     response = requests.post(crawl_page_url, json=data, timeout=500, headers=headers)

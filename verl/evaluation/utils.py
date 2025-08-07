@@ -1,7 +1,23 @@
+#!/usr/bin/env python
+# coding=utf-8
+# Copyright 2025 The OPPO Inc. Personal AI team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import re
 from typing import List, Dict, Any, Union
-
+from openai import OpenAI
 import tiktoken
 
 
@@ -195,7 +211,6 @@ def truncate_special_tokens(text: str, max_tokens: int, tokenizer: str) -> str:
                 if re.match(r'</[^>]+>', segment):
                     tag_name = re.search(r'</([^>]+)>', segment).group(1)
                     start_tag_found = False
-                    print(result)
                     for s, _ in reversed(result):
                         if re.match(rf'<{tag_name}>', s):
                             start_tag_found = True

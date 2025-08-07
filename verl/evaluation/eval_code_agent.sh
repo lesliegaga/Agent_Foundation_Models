@@ -21,8 +21,8 @@ max_response_length=$((1024 * 28))
 actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
-SP_SIZE=4
-GEN_TP=4
+SP_SIZE=1
+GEN_TP=1
 use_dynamic_bsz=False
 # =====================================================================================================================
 #                                      Env
@@ -34,15 +34,16 @@ export BASE_MODEL="your train model path"
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
 TRAIN_DATASETS="your train datasets"
 VAL_DATASETS="your val datasets"
+CURRENT_DIR=$(pwd)
 # =====================================================================================================================
 #                                      Tool
 # =====================================================================================================================
 # code tool
-CODE_CONFIG="./verl/tools/config/code_tool_config/code_executor.yaml"
+CODE_CONFIG="${CURRENT_DIR}/verl/tools/config/code_tool_config/code_executor.yaml"
 # search tools
-SEARCH_CONFIG="./verl/tools/config/search_tool_config/training_servers_config.yaml"
+SEARCH_CONFIG="${CURRENT_DIR}/verl/tools/config/search_tool_config/training_servers_config.yaml"
 # afm tools
-AFM_CONFIG="./verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
+AFM_CONFIG="${CURRENT_DIR}/verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
 # =====================================================================================================================
 #                                      Train
 # =====================================================================================================================
@@ -111,5 +112,4 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.multi_turn.use_xml_tool_parser=true \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$CODE_CONFIG" \
     reward_model.reward_manager="afm" \
-    curriculum_learning.enable=false \
     2>&1 | tee logs/$EXPERIMENT_NAME.log

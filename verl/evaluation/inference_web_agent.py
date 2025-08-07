@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+# coding=utf-8
+# Copyright 2025 The OPPO Inc. Personal AI team. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 import re
 import string
@@ -14,7 +30,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from prompts import llm_evaluation_webthinker, function_2_tool_cqb_reflection_doublecheck_rule
 from web_tools import WebSearchTool, CrawlPageTool
-from utils import read_jsonl, write_jsonl, read_json, write_json, count_tokens, truncate_special_tokens
+from utils import read_jsonl, write_jsonl, read_json, write_json, count_tokens, truncate_special_tokens, retry_predict
 
 
 logging.basicConfig(
@@ -24,9 +40,9 @@ logging.basicConfig(
 
 
 ### Your Own Model
-KEY = "empty" # os.getenv("")
-URL = "..."    # os.getenv("")
-MODEL = "AFM-Web-Qwen-32B-RL"      # os.getenv("")
+KEY = "empty"
+URL = "your server url"
+MODEL = "AFM-Web-Qwen-32B-RL"
 SYSTEM_PROMPT = function_2_tool_cqb_reflection_doublecheck_rule
 
 
@@ -45,7 +61,7 @@ INFER_KWARGS = {
     "total_tokens": 32768,
     "web_topk": 10,
     "trajectory_len": 36,
-    "parallel": 1,
+    "parallel": 10,
     "round": 3,
 }
 
@@ -80,7 +96,6 @@ def request_service(system, prompt, current_answer, url, key, model, stop_words=
             max_tokens=kwargs.get("max_tokens", 4096), 
             n=1, 
         )
-
         collected_content = []
         model_output = model_output_message.choices[0].message.content
         stop_tag = model_output_message.choices[0].model_extra["stop_reason"]
@@ -141,7 +156,7 @@ def get_search_results_with_format(task, response, history, **kwargs):
 
         if tool == '</web_search>':
             search_results = WebSearchTool(
-                f'{os.getenv("SERVER_HOST")}:{os.getenv("WEBSEARCH_PORT")}/search',
+                f'http://{os.getenv("SERVER_HOST")}:{os.getenv("WEBSEARCH_PORT")}/search',
                 api_key=os.getenv("SUMMARY_OPENAI_API_KEY"),
                 api_url=os.getenv("SUMMARY_OPENAI_API_BASE_URL"),
                 model=os.getenv("SUMMARY_MODEL"),
@@ -152,7 +167,7 @@ def get_search_results_with_format(task, response, history, **kwargs):
             )
         elif tool == "</crawl_page>":
             search_results = CrawlPageTool(
-                f'{os.getenv("SERVER_HOST")}:{os.getenv("CRAWL_PAGE_PORT")}/crawl_page',
+                f'http://{os.getenv("SERVER_HOST")}:{os.getenv("CRAWL_PAGE_PORT")}/crawl_page',
                 api_key=os.getenv("SUMMARY_OPENAI_API_KEY"),
                 api_url=os.getenv("SUMMARY_OPENAI_API_BASE_URL"),
                 model=os.getenv("SUMMARY_MODEL"),
@@ -309,6 +324,9 @@ def process_queries(infile, outfile, q_key, a_key, **kwargs):
                         trace["error"] = "Error in processing"
                     else:
                         if result_list[-1]["type"] == "answer":
+                            prediction = re.findall(r'<answer>(.*?)</answer>', 
+                                                        result_list[-1]["content"], 
+                                                        re.DOTALL)[0].strip()
                             trace["prediction"] = prediction
                             trace["status"] = "completed"
                         else:

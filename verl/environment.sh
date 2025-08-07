@@ -38,3 +38,6 @@ export SUMMARY_MODEL="qwen2.5-72b-instruct"
 # =====================================================================================================================
 # for evaluate code val datasets
 export LIVECODEBENCH_DATA_PATH="data/livecodebench_testcases"
+
+export UNI_API_URLS="https://api.uniapi.vip/v1" # or other qwen3 api provider
+export UNI_API_KEY="api key"

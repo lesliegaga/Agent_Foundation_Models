@@ -28,10 +28,12 @@ def get_custom_reward_fn(config, is_valid):
     import sys
 
     reward_fn_config = config.get("custom_reward_function") or {}
-    file_path = reward_fn_config.get("path")
+
+    if not is_valid:
+        file_path = reward_fn_config.get("train_path")
+    else:
+        file_path = reward_fn_config.get("val_path")
     if not file_path:
-        return None
-    if is_valid:
         return None
 
     if not os.path.exists(file_path):
@@ -45,7 +47,11 @@ def get_custom_reward_fn(config, is_valid):
     except Exception as e:
         raise RuntimeError(f"Error loading module from '{file_path}': {e}") from e
 
-    function_name = reward_fn_config.get("name")
+    if not is_valid:
+        function_name = reward_fn_config.get("train_name")
+    else:
+        function_name = reward_fn_config.get("val_name")
+    
     if not hasattr(module, function_name):
         raise AttributeError(f"Reward function '{function_name}' not found in '{file_path}'.")
 
@@ -109,7 +115,7 @@ def load_reward_manager(config, tokenizer, num_examine, is_valid, **reward_kwarg
         final_compute_score = compute_score
         if final_compute_score is None:
             final_compute_score = default_compute_score
-        return reward_manager_cls(tokenizer, num_examine, final_compute_score, reward_fn_key, **reward_kwargs)
+        return reward_manager_cls(tokenizer, num_examine, final_compute_score, **reward_kwargs)
 
 
 def compute_reward(data: DataProto, reward_fn):

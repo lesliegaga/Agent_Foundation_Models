@@ -160,6 +160,7 @@ try:
     with open(os.path.join(current_dir, "few_shot_examples/generation/stdin.json")) as f:
         stdin = json.load(f)
 except FileNotFoundError:
+    import warnings
     warnings.warn("Few shot examples not found, skipping...")
 
 def get_base_model_question_template_answer(question: CodeGenerationProblem):

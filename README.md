@@ -235,7 +235,7 @@ source environment.sh
 To start a training run:
 
 1. Edit `experiments/train_dapo_afm.sh` to specify your downloaded dataset and model
-2. Chose the tools you want to use during training. We have developed three tools: web_search, craw_page and code_executor. `./verl/tools/config/search_tool_config/training_servers_config.yaml` is for web_search and crawl_page. `./verl/tools/config/code_tool_config/code_executor.yaml` is for code_executor. Please fill the corresponding config in the `actor_rollout_ref.rollout.multi_turn.tool_config_path` param to specify your tools.
+2. Chose the tools you want to use during training. We have developed three tools: web_search, craw_page and code_executor. `verl/tools/config/search_tool_config/training_servers_config.yaml` is for web_search and crawl_page. `verl/tools/config/code_tool_config/code_executor.yaml` is for code_executor. `verl/tools/config/search_tool_config/wiki_rag_config.yaml` is for wiki_search. Please fill the corresponding config in the `actor_rollout_ref.rollout.multi_turn.tool_config_path` param to specify your tools.
 2. Execute the training script:
 ```bash
 bash experiments/train_dapo_afm.sh
@@ -243,23 +243,31 @@ bash experiments/train_dapo_afm.sh
 
 ### Evaluation
 
-For generate trajectories only:
+#### Multi Hop QA (MHQA) Evaluation
+1. To evaluate MHQA datasets, you should first download the AFM-MHQA-Agent-7B-rl model and test datasets
+2. Then run
+  ```bash
+  bash evaluation/inference_mhqa.sh
+  ```
 
+#### Web Agent Evaluation
+1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
+
+2. Set environment variable `source environment.sh`.
+
+3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `bash evaluation/run_qwen.sh`.
+
+4. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
 ```bash
-bash inference/inference.sh
+python evaluation/inference_web_agent.py \
+    --infile  /path/to/test/data.json \
+    --outfile webagent_out.jsonl \
+    --rounds 5
 ```
 
-If you want to evaluate the search agent model's capabilities, please download the corresponding model and validation datasets, then use the following command:
-
-```bash
-# MHQA
-bash evaluation/inference_mhqa.sh
-# Web agent
-bash evaluation/run_qwen.sh
-python inference_web_agent.py
-```
-
-If you want to evaluate the code agent model's capabilities, all related evaluation datasets are stored in the `data/code_math_benchmarks` folder. Please fill in the downloaded code agent model and validation datasets in `evaluation/eval_code_agent.sh`, then run:
+#### Code Agent Evaluation
+1. All math and code related evaluation datasets are stored in the `data/code_math_benchmarks` folder. 
+2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `evaluation/eval_code_agent.sh`, then run:
 
 ```bash
 bash evaluation/eval_code_agent.sh

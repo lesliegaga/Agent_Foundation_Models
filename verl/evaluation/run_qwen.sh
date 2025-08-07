@@ -2,20 +2,13 @@
 export TORCHDYNAMO_VERBOSE=1
 
 ### RL ###
-model_path=/home/notebook/code/group/linjianbo/train_infer_rl_search/experiments/double_check_rule_dapo/DAPO-SFT50-mix0725-repfmt/checkpoints/global_step_30/huggingface
-base_modelname=AFM-Web-Qwen-32B-RL
+model_path="your model path"
+base_modelname=AFM-WebAgent-32B-RL
 base_port=10000
-
-# bash /mnt/workspace/cjy/AFM/afm_infer_sh/run_qwen.sh
-# ps aux | grep 'vllm serve' | grep -v grep | awk '{print $2}' | xargs kill -9
-# ps aux | grep '/opt/conda/envs/AFM_infer/bin/python3.11' | grep -v grep | awk '{print $2}' | xargs kill -9
-# ps aux | grep '/opt/conda/envs/AFM_infer/bin/python' | grep -v grep | awk '{print $2}' | xargs kill -9
-# rm -r ~/.cache/vllm/torch_compile_cache
 
 
 INSTANCES=1
-GPUS_PER_INSTANCE=2
-# max_model_len=131072
+GPUS_PER_INSTANCE=4
 max_model_len=32768
 LOG_DIR="logs"
 WAIT_TIMEOUT=300
