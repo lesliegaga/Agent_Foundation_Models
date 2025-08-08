@@ -164,7 +164,7 @@ We have developed two server-side components to support web interactions:
 - A web search server
 - A page crawling server
 
-For detailed deployment instructions, please refer to `tool_servers/tool_server_readme.md`.
+For detailed deployment instructions, please refer to `AFM/tool_servers/tool_server_readme.md`.
 
 
 ##### 2.2 Code Server(s)
@@ -253,7 +253,7 @@ bash ./prepare.sh
 ### Web Agent Evaluation
 1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
 2. Set environment variable `source environment.sh`.
-3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
+3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `./AFM/evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
 4. Choose from available test sets in `./AFM/data/web_agent/test_benchmarks`: gaia, hle, webwalker, browsercomp.
 5. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
 
@@ -266,7 +266,8 @@ python ./AFM/evaluation/web_agent/inference_web_agent.py \
 
 ### Code Agent Evaluation
 1. All math and code related evaluation datasets are stored in the `./AFM/data/code_agent/code_math_benchmarks` folder. 
-2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `./AFM/evaluation/code_agent/eval_code_agent.sh`, then run:
+2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `./AFM/evaluation/code_agent/eval_code_agent.sh`
+3. Make sure you have build nsjail code sandbox and fill in the corresponding config. Then run
 
 ```bash
 bash ./AFM/evaluation/code_agent/eval_code_agent.sh

@@ -7,7 +7,7 @@ ulimit -n 65535
 ACTOR_LR=1e-6
 TRAIN_BS=256
 PPO_MINI_BS=32
-GEN_BS=512
+GEN_BS=256
 EPOCHS=100
 STEPS=2000
 N=8
@@ -17,7 +17,7 @@ CLIP_RATIO_LOW=0.2
 CLIP_RATIO_HIGH=0.28
 # context window
 max_prompt_length=$((1024 * 4))
-max_response_length=$((1024 * 28))
+max_response_length=$((1024 * 16))
 actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
@@ -34,9 +34,9 @@ export NNODES=8 # "your GPU group number"
 export PROJECT_NAME="agent_foundation_models"
 SAVE_MODEL_FOLDER="${CURRENT_DIR}/experiments"  # your save model folder
 export EXPERIMENT_NAME="DAPO-QWEN32B-CodeAgent"
-export BASE_MODEL="${CURRENT_DIR}/models/web_agent/AFM-CodeAgent-32B-sft"   # your train model path
+export BASE_MODEL="${CURRENT_DIR}/AFM/models/web_agent/AFM-CodeAgent-32B-sft"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
-TRAIN_DATASETS="${CURRENT_DIR}/data/web_agent/AFM-CodeAgent-RL-Dataset/CodeAgentRLDataset.parquet"   # your train dataset
+TRAIN_DATASETS="${CURRENT_DIR}/AFM/data/web_agent/AFM-CodeAgent-RL-Dataset/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="your val datasets"
 # =====================================================================================================================
 #                                      Tool

@@ -35,10 +35,10 @@ export NNODES=8
 export PROJECT_NAME="agent_foundation_models"
 EXPERIMENT_DIR=$(dirname "$(readlink -f "$0")")
 export EXPERIMENT_NAME="DAPO-QWEN32B-WebAgent"
-export BASE_MODEL="${CURRENT_DIR}/models/web_agent/AFM-WebAgent-32B-sft"   # your train model path
+export BASE_MODEL="${CURRENT_DIR}/AFM/models/web_agent/AFM-WebAgent-32B-sft"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS
-TRAIN_DATASETS="${CURRENT_DIR}/data/web_agent/AFM-WebAgent-RL-Dataset/combined_data_0724.parquet"   # your train dataset
-VAL_DATASETS="/home/notebook/code/group/linjianbo/train_infer_rl_search/data/double_check_rule/_gaia_dev.finalized.parquet" # "your val datasets"
+TRAIN_DATASETS="${CURRENT_DIR}/AFM/data/web_agent/AFM-WebAgent-RL-Dataset/combined_data_0724.parquet"   # your train dataset
+VAL_DATASETS="" # "your val datasets"
 # =====================================================================================================================
 #                                      Tool
 # =====================================================================================================================

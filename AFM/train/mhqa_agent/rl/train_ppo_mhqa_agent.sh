@@ -34,9 +34,9 @@ export NNODES=2 # "your GPU group number"
 export PROJECT_NAME="agent_foundation_models"
 SAVE_MODEL_FOLDER="${CURRENT_DIR}/experiments"  # your save model folder
 export EXPERIMENT_NAME="PPO-QWEN7B-MHQA-Agent"
-export BASE_MODEL="${CURRENT_DIR}/models/mhqa_agent/AFM-MHQA-Agent-7B-sft"   # your train model path
+export BASE_MODEL="${CURRENT_DIR}/AFM/models/mhqa_agent/AFM-MHQA-Agent-7B-sft"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS
-TRAIN_DATASETS="${CURRENT_DIR}/data/mhqa_agent/AFM-MHQA-RL-Dataset/original_16w_column_filter.parquet"   # your train dataset
+TRAIN_DATASETS="${CURRENT_DIR}/AFM/data/mhqa_agent/AFM-MHQA-RL-Dataset/original_16w_column_filter.parquet"   # your train dataset
 VAL_DATASETS="your val datasets"
 # =====================================================================================================================
 #                                      Tool
