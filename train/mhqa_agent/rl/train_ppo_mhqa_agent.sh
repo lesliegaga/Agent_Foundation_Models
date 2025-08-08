@@ -16,8 +16,8 @@ LOG_PROB_MICRO_BSZ_PER_GPU=16
 CLIP_RATIO_LOW=0.2
 CLIP_RATIO_HIGH=0.28
 # context window
-max_prompt_length=$((1024 * 4))
-max_response_length=$((1024 * 28))
+max_prompt_length=$((1024 * 2))
+max_response_length=$((1024 * 8))
 actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
@@ -47,6 +47,8 @@ CODE_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/code_tool_config/code_executo
 SEARCH_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/search_tool_config/training_servers_config.yaml"
 # afm tools
 AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
+# wiki tools
+WIKI_SEARCH="${CURRENT_DIR}/verl/verl/tools/config/search_tool_config/wiki_rag_config.yaml"
 # =====================================================================================================================
 #                                      Train
 # =====================================================================================================================
@@ -92,14 +94,23 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.ref.fsdp_config.param_offload=true \
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
+    critic.optim.lr=1e-5 \
+    critic.model.use_remove_padding=True \
+    critic.optim.lr_warmup_steps_ratio=0.05 \
+    critic.model.path=$MODEL_PATH \
+    critic.model.enable_gradient_checkpointing=True \
+    critic.use_dynamic_bsz=True \
+    critic.ppo_max_token_len_per_gpu=100000 \
+    critic.model.fsdp_config.param_offload=False \
+    critic.model.fsdp_config.optimizer_offload=False \
     trainer.logger=['wandb','tensorboard'] \
     trainer.val_only=false \
     trainer.val_before_train=true \
     trainer.default_hdfs_dir=null \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=$NNODES \
-    trainer.save_freq=5 \
-    trainer.test_freq=10 \
+    trainer.save_freq=20 \
+    trainer.test_freq=20 \
     trainer.project_name=$PROJECT_NAME \
     trainer.experiment_name=$EXPERIMENT_NAME \
     trainer.total_epochs="${EPOCHS}" \
@@ -110,7 +121,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.multi_turn.max_turns=8 \
     +actor_rollout_ref.rollout.multi_turn.format=qwen \
     actor_rollout_ref.rollout.multi_turn.use_xml_tool_parser=true \
-    actor_rollout_ref.rollout.multi_turn.tool_config_path="$CODE_CONFIG" \
+    actor_rollout_ref.rollout.multi_turn.tool_config_path="$WIKI_SEARCH" \
     reward_model.reward_manager="batch" \
     custom_reward_function.train_path="${CURRENT_DIR}/verl/verl/utils/reward_score/mhqa_train.py" \
     custom_reward_function.train_name="compute_score_em_batch" \
