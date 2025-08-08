@@ -25,7 +25,7 @@ The following files were updated to support these features:
 - A	server/server_tests/test_wiki_rag_simple.py
 - A	server/start_servers_v2.sh
 - A	server/tool_server_readme.md
-- A	server/v2/cache_serper_server_v2_train.py
+- A	server/v2/cache_serper_server_v2.py
 - A	server/v2/crawl_page_server_v2.py
 - A	server/v2/keys.py
 - A	server/wiki_server/launch_rag_server.sh

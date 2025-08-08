@@ -5,7 +5,6 @@
 </div>
 
 <div align="center">
-  <a href='https://chain-of-agents-afm.github.io/'><img src='https://img.shields.io/badge/Project-Github-red?logo=GitHub&logoWidth=40'></a>
   <a href='https://arxiv.org/abs/'><img src='https://img.shields.io/badge/Paper AFM-arXiv-d63031?logo=arxiv&logoColor=white'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-689200e11d0b21a67c015ba8'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Models-Huggingface-yellow'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-datasets-6892140eaad360ea5ccdcde1'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Huggingface-yellow'></a>
@@ -17,7 +16,8 @@ This is the official repository for our paper "Chain-of-Agents: End-to-End Agent
   <img src="./assets/afm.png" width="85%" height="auto" />
 </div>
 
-# Overview
+## Overview
+
 Recent advances in large language models (LLMs) and multi-agent systems have demonstrated remarkable capabilities in complex problem-solving. However, existing multi-agent systems often rely on manual prompt engineering and sophisticated frameworks, leading to inefficiencies. 
 
 We propose:
@@ -25,44 +25,10 @@ We propose:
 - **Agent Foundation Models (AFMs)**: Models trained through our multi-agent distillation framework and agentic reinforcement learning
 
 
-# Quick Feature Summary
-| Feature Category | Supported Capabilities|
-| - | - |
-| **Core Paradigm**          | ✅ Chain-of-Agents (CoA) for end-to-end problem-solving<br>✅ Single-model simulation of multi-agent collaboration<br>✅ Dynamic activation of tool agents and role-playing agents |
-| **Training Framework**               | ✅ Multi-Agent Distillation pipeline<br>✅  Agentic Reinforcement Learning support<br>✅ Mask fine-tuning for selective learning |
-| **Agent Capabilities**    | ✅ Web interaction (Web Agent)<br>✅ Multi-hop question answering (MHQA Agent)<br>✅ Code execution (Code Agent) |
-| **Tool Integration**            | ✅ Web search and crawling servers<br>✅ Secure code sandbox (via nsjail) <br>✅ Configurable multi-tool collaboration |
-| **Evaluation**        | ✅ Multi-scenario benchmark testing<br>✅ Custom reward model integration<br> |
+## SFT Training
 
+### Quick Start
 
-# Table of Contents
-- [Overview](#overview)
-- [Quick Feature Summary](#quick-feature-summary)
-- [Running Examples](#running-examples)
-  - [Training](#training)
-    - [Supervised Fine-tuning](#supervised-fine-tuning)
-      - [1. Env Setup](#1-env-setup)
-      - [2. Prepare SFT Dataset](#2-prepare-sft-dataset)
-      - [3. Start training with default parameters](#3-start-training-with-default-parameters)
-    - [Reinforcement Learning](#reinforement-learning)
-      - [1. Env Setup](#1-env-setup-1)
-      - [2. Tool Server Deployment](#2-tool-server-deployment)
-      - [3. Python Sandbox Usage](#3-python-sandbox-usage)
-      - [4. Configuration](#4-configuration)
-      - [5. Dataset Processing](#5-dataset-processing)
-      - [6. Training](#6-training)
-  - [Evaluation](#evaluation)
-    - [Multi Hop QA (MHQA) Evaluation](#multi-hop-qa-mhqa-evaluation)
-    - [Web Agent Evaluation](#web-agent-evaluation)
-    - [Code Agent Evaluation](#code-agent-evaluation)
-- [Acknowledgement](#acknowledgement)
-- [Citation](#citation)
-- [Star](#star)
-
-
-# Running Examples
-## Training
-### Supervised Fine-tuning
 #### 1. Env Setup
 ```bash
 conda create -n llama_factory python=3.10
@@ -110,8 +76,10 @@ ignore_observation_token=observation # Specify special token
 ```
 **Note: Check if special tokens are properly masked and data length is appropriate after starting.**
 
-### Reinforement Learning
-#### 1. Env Setup
+## Reinforement Learning
+
+### Environment Setup
+
 ```bash
 # Create virtual environment. 
 conda create -n afm python=3.10.14 -y
@@ -139,15 +107,15 @@ cd ..
 ```
 
 
-#### 2. Tool Server Deployment
+### Tool Server Deployment
+
 We have developed two server-side components to support web interactions:
 - A web search server
 - A page crawling server
 
 For detailed deployment instructions, please refer to `tool_servers/tool_server_readme.md`.
 
-
-#### 3. Python Sandbox Usage
+### Python Sandbox Usage
 Our Python executor leverages the powerful local isolation sandbox capabilities provided by [nsjail](https://github.com/google/nsjail). We greatly appreciate the nsjail project for enabling secure code execution.
 
 To use this feature during training, you need to:
@@ -163,15 +131,75 @@ To use this feature during training, you need to:
    nsjail_path: /abs_path/to/your/nsjail/nsjail
    ```
 
+### Configuration
 
-#### 4. Configuration
 1. Edit the `environment.sh` file and fill in your API keys and other required credentials
 2. Apply the environment settings:
 ```bash
 source environment.sh
 ```
 
-#### 5. Dataset Processing
+### Training
+
+To start a training run:
+
+1. All Agentic-RL script examples are listed:
+    -  Web Agent: `train/web_agent/rl/train_dapo_web_agent.sh`
+    -  Code Agent: `train/code_agent/rl/train_dapo_code_agent.sh`
+    -  MHQA Agent: `train/mhqa_agent/rl/train_ppo_mhqa_agent.sh`
+2. Edit the corresponding script to specify your downloaded dataset and model
+3. Make sure you have already fill in the `environment.sh` and source
+4. All tool configs are listed and have been specified in training scripts: 
+    - web_search and crawl_page: `verl/verl/tools/config/search_tool_config/training_servers_config.yaml`
+    - code_executor: `verl/verl/tools/config/code_tool_config/code_executor.yaml`
+    - wiki_search: `verl/verl/tools/config/search_tool_config/wiki_rag_config.yaml`
+    - all_tools: `verl/verl/tools/config/afm_tool_config/afm_tool_config.yaml`
+5. Execute the training script like:
+```bash
+bash train/web_agent/rl/train_dapo_web_agent.sh
+```
+
+### Evaluation
+
+#### Multi Hop QA (MHQA) Evaluation
+1. To evaluate MHQA datasets, you should first download the AFM-MHQA-Agent-7B-rl model and test datasets
+2. Transform the test dataset to parquet format.
+```bash
+cd data/mhqa_agent
+bash ./prepare.sh
+```
+3. Then fill the corresponding dataset and model in scripts below and run
+  ```bash
+  bash evaluation/inference_mhqa.sh
+  ```
+
+#### Web Agent Evaluation
+1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
+
+2. Set environment variable `source environment.sh`.
+
+3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
+
+4. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
+
+```bash
+python evaluation/web_agent/inference_web_agent.py \
+    --infile  data/web_agent/test_benchmarks/gaia_dev_103.json \
+    --outfile evaluation/web_agent/results/webagent_out.jsonl
+```
+
+#### Code Agent Evaluation
+1. All math and code related evaluation datasets are stored in the `data/code_agent/code_math_benchmarks` folder. 
+2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `evaluation/code_agent/eval_code_agent.sh`, then run:
+
+```bash
+bash evaluation/code_agent/eval_code_agent.sh
+```
+
+In addition, if you want to evaluate livecodebench datasets, please use the scripts `data/code_agent/livecodebench_testcases/download_and_process.py` to generate corresponding testcases. We would like to thank the [Skywork-OR1](https://github.com/SkyworkAI/Skywork-OR1) for their open-source evaluation code. Our evaluation implementation for math and code training sets was inspired by and adapted from their work.
+
+### Dataset Processing
+
 The `data/README.md` contains scripts and instructions for processing search agent model related data.
 
 For code agent model, the validation datasets are already provided in the `data/code_agent/code_math_benchmarks` folder, with corresponding processing instructions available in `data/code_agent/code_math_benchmarks/README.md`.
@@ -195,82 +223,12 @@ The final web_agent and mhqa_agent dataset format is shown below and stored in .
 }
 ```
 
-
-#### 6. Training
-To start a training run:
-
-1. All Agentic-RL script examples are listed:
-    -  Web Agent: `train/web_agent/rl/train_dapo_web_agent.sh`
-    -  Code Agent: `train/code_agent/rl/train_dapo_code_agent.sh`
-    -  MHQA Agent: `train/mhqa_agent/rl/train_ppo_mhqa_agent.sh`
-2. Edit the corresponding script to specify your downloaded dataset and model
-3. Make sure you have already fill in the `environment.sh` and source
-4. All tool configs are listed and have been specified in training scripts: 
-    - web_search and crawl_page: `verl/verl/tools/config/search_tool_config/training_servers_config.yaml`
-    - code_executor: `verl/verl/tools/config/code_tool_config/code_executor.yaml`
-    - wiki_search: `verl/verl/tools/config/search_tool_config/wiki_rag_config.yaml`
-    - all_tools: `verl/verl/tools/config/afm_tool_config/afm_tool_config.yaml`
-5. Execute the training script like:
-```bash
-bash train/web_agent/rl/train_dapo_web_agent.sh
-```
-
-
-## Evaluation
-### Multi Hop QA (MHQA) Evaluation
-1. To evaluate MHQA datasets, you should first download the AFM-MHQA-Agent-7B-rl model and test datasets
-2. Transform the test dataset to parquet format.
-```bash
-cd data/mhqa_agent
-bash ./prepare.sh
-```
-3. Then fill the corresponding dataset and model in scripts below and run
-  ```bash
-  bash evaluation/inference_mhqa.sh
-  ```
-
-
-### Web Agent Evaluation
-1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
-2. Set environment variable `source environment.sh`.
-3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
-4. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
-
-```bash
-python evaluation/web_agent/inference_web_agent.py \
-    --infile  data/web_agent/test_benchmarks/gaia_dev_103.json \ # or 
-    --outfile evaluation/web_agent/results/webagent_out.jsonl
-```
-
-
-### Code Agent Evaluation
-1. All math and code related evaluation datasets are stored in the `data/code_agent/code_math_benchmarks` folder. 
-2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `evaluation/code_agent/eval_code_agent.sh`, then run:
-
-```bash
-bash evaluation/code_agent/eval_code_agent.sh
-```
-
-In addition, if you want to evaluate livecodebench datasets, please use the scripts `data/code_agent/livecodebench_testcases/download_and_process.py` to generate corresponding testcases. We would like to thank the [Skywork-OR1](https://github.com/SkyworkAI/Skywork-OR1) for their open-source evaluation code. Our evaluation implementation for math and code training sets was inspired by and adapted from their work.
-
-
-# Acknowledgement
+## Acknowledgement
 We would like to express our sincere gratitude to the original authors and contributors of LLaMA-Factory and verl, an excellent open-source project that provided a solid foundation for our work. Our implementation has been adapted from the [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) and [verl](https://github.com/volcengine/verl). 
 Specifically, based on the LLaMA-Factory framework, we have modified the implementation of fine-tuning pipeline to support mask fine-tuning; while in the VeRL framework, we have enhanced it with functionalities: tool calling for reinforcement learning training, reward design, and related supporting features.
 
+## Star
 
-## Citation
-If you find `AFM` useful in your research or applications, we would appreciate it if you could cite our work:
-```bibtex
-@article{chain-of-agents-2025,
-  title={Chain-of-Agents: End-to-End Agent Foundation Models via Multi-Agent Distillation and Agentic RL},
-  author={OPPO PersonalAI Lab},
-  journal={arXiv preprint arXiv:xxxx.xxxxx},
-  year={2025}
-}
-```
-
-# Star
 <div align="center">
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OPPO-PersonalAI/Agent_Foundation_Models&type=Date)](https://github.com/OPPO-PersonalAI/Agent_Foundation_Models)

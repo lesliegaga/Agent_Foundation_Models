@@ -54,27 +54,20 @@ def normalize_answer(s):
 
 
 def em_check(predictions, golden_answers):
-    # 确保黄金答案是列表格式
     if isinstance(golden_answers, str):
         golden_answers = [golden_answers]
     
-    # 标准化所有黄金答案
     normalized_golden = [normalize_answer(ans) for ans in golden_answers]
     
-    # 先去空
     predictions = [prediction for prediction in predictions if prediction]
 
-    # 处理预测为空的情况（空预测视为不符合要求）
     if not predictions:
         return 0
-    predictions = [predictions[0]] # 取第零个answer
-    # 检查每个预测是否都符合要求
+    predictions = [predictions[0]]
     for prediction in predictions:
         normalized_pred = normalize_answer(prediction)
-        # 只要有一个预测不在黄金答案中，就返回0
         if normalized_pred not in normalized_golden:
             return 0
-    # 所有预测都符合要求，返回1
     return 1
 
 
@@ -102,15 +95,13 @@ def extract_solution(solution_str):
     #     return None
     # solution_str = solution_str.split('\n')[-1]
     answer_pattern = r'<answer>(.*?)</answer>'
-    # 查找所有匹配的标签内容，使用DOTALL模式确保.匹配换行符
     matches = list(re.finditer(answer_pattern, solution_str, re.DOTALL))
     
     if not matches:
         return None
     
-    # 取最后一个匹配的内容（不使用strip()，避免移除有意义的空白）
     last_content = matches[-1].group(1)
-    # 按|分割成列表
+    # split by "|"
     answers = last_content.split('|')
     
     all_answers = answers if answers else None
@@ -149,15 +140,15 @@ def compute_score_em(data_source, prompt_str, solution_str, ground_truth, extra_
 
 def compute_score_em_batch(
     data_sources: list[str],
-    prompt_strs: list[str],
-    solution_strs: list[str], 
+    prompts: list[str],
+    responses: list[str], 
     ground_truths: list[dict],
     extra_infos: list[dict],
     **kwargs
 ) -> list[float]:
 
     scores = []
-    for (ds, p, s, gt) in zip(data_sources, prompt_strs, solution_strs, ground_truths):
+    for (ds, p, s, gt) in zip(data_sources, prompts, responses, ground_truths):
         score = compute_score_em(ds, p, s, gt).get("score")
         scores.append(score)
     
