@@ -234,11 +234,12 @@ bash ./prepare.sh
 1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
 2. Set environment variable `source environment.sh`.
 3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
-4. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
+4. Choose from available test sets in `data/web_agent/test_benchmarks`: gaia, hle, webwalker, browsercomp.
+5. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
 
 ```bash
 python evaluation/web_agent/inference_web_agent.py \
-    --infile  data/web_agent/test_benchmarks/gaia_dev_103.json \ # or 
+    --infile  data/web_agent/test_benchmarks/gaia_dev_103.json \
     --outfile evaluation/web_agent/results/webagent_out.jsonl
 ```
 

@@ -49,22 +49,6 @@ SEARCH_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/search_tool_config/training
 # afm tools
 AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_config.yaml" 
 
-# # DEBUG
-# TRAIN_BS=4
-# PPO_MINI_BS=4
-# GEN_BS=8
-# N=2
-# SP_SIZE=1
-# GEN_TP=4
-# export NNODES=1
-# PPO_MICRO_BSZ_PER_GPU=2
-# LOG_PROB_MICRO_BSZ_PER_GPU=8
-# max_prompt_length=$((1024 * 2))
-# max_response_length=$((1024 * 6))
-# actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
-# infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
-
-
 # =====================================================================================================================
 #                                      Train
 # =====================================================================================================================
