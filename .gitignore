@@ -135,9 +135,9 @@ ENV/
 
 # data
 *.parquet
-!data/code_agent/code_math_benchmarks/*.parquet
-!data/web_agent/test_benchmarks/*.json
-!data/web_agent/test_benchmarks/*.jsonl
+!AFM/data/code_agent/code_math_benchmarks/*.parquet
+!AFM/data/web_agent/test_benchmarks/*.json
+!AFM/data/mhqa_agent/test_benchmarks/*.jsonl
 
 
 # scripts

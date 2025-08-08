@@ -95,9 +95,9 @@ pip install -e '.[torch,metrics]'
 #### 2. Prepare SFT Dataset
 Download SFT Dataset for Web/MHQA/Code Agent:
 ```py 
-python data/web_agent/download.py 
-python data/mhqa_agent/download.py 
-python data/code_agent/download.py 
+python ./AFM/data/web_agent/download.py 
+python ./AFM/data/mhqa_agent/download.py 
+python ./AFM/data/code_agent/download.py 
 ```
 
 Add the downloaded dataset filepath to `LLaMA-Factory/data/dataset_info.json`, for example:
@@ -111,7 +111,7 @@ Add the downloaded dataset filepath to `LLaMA-Factory/data/dataset_info.json`, f
 The training scripts are list in `./train`. 
 Example of sft for code agent:
 ```bash
-bash ./train/code_agent/sft/sft_qwen2.5_7b.sh
+bash ./AFM/train/code_agent/sft/sft_qwen2.5_7b.sh
 ```
 
 Note `DATA_DATA` in the training bash script should be the key in `LLaMA-Factory/data/dataset_info.json`, like `web_agent_sft`, `mhqa_agent_sft`, `code_agent_sft`.
@@ -192,9 +192,9 @@ source environment.sh
 ```
 
 #### 5. Dataset Processing
-The `data/README.md` contains scripts and instructions for processing search agent model related data.
+The `./AFM/data/README.md` contains scripts and instructions for processing search agent model related data.
 
-For code agent model, the validation datasets are already provided in the `data/code_agent/code_math_benchmarks` folder, with corresponding processing instructions available in `data/code_agent/code_math_benchmarks/README.md`.
+For code agent model, the validation datasets are already provided in the `./AFM/data/code_agent/code_math_benchmarks` folder, with corresponding processing instructions available in `./AFM/data/code_agent/code_math_benchmarks/README.md`.
 
 The final web_agent and mhqa_agent dataset format is shown below and stored in .parquet: 
 ```python
@@ -220,9 +220,9 @@ The final web_agent and mhqa_agent dataset format is shown below and stored in .
 To start a training run:
 
 1. All Agentic-RL script examples are listed:
-    -  Web Agent: `train/web_agent/rl/train_dapo_web_agent.sh`
-    -  Code Agent: `train/code_agent/rl/train_dapo_code_agent.sh`
-    -  MHQA Agent: `train/mhqa_agent/rl/train_ppo_mhqa_agent.sh`
+    -  Web Agent: `./AFM/train/web_agent/rl/train_dapo_web_agent.sh`
+    -  Code Agent: `./AFM/train/code_agent/rl/train_dapo_code_agent.sh`
+    -  MHQA Agent: `./AFM/train/mhqa_agent/rl/train_ppo_mhqa_agent.sh`
 2. Edit the corresponding script to specify your downloaded dataset and model
 3. Make sure you have already fill in the `environment.sh` and source
 4. All tool configs are listed and have been specified in training scripts: 
@@ -232,7 +232,7 @@ To start a training run:
     - all_tools: `verl/verl/tools/config/afm_tool_config/afm_tool_config.yaml`
 5. Execute the training script like:
 ```bash
-bash train/web_agent/rl/train_dapo_web_agent.sh
+bash ./AFM/train/web_agent/rl/train_dapo_web_agent.sh
 ```
 
 
@@ -241,7 +241,7 @@ bash train/web_agent/rl/train_dapo_web_agent.sh
 1. To evaluate MHQA datasets, you should first download the AFM-MHQA-Agent-7B-rl model and test datasets
 2. Transform the test dataset to parquet format.
 ```bash
-cd data/mhqa_agent
+cd ./AFM/data/mhqa_agent
 bash ./prepare.sh
 ```
 3. Then fill the corresponding dataset and model in scripts below and run
@@ -254,25 +254,25 @@ bash ./prepare.sh
 1. To evaluate web agent, you should first download the AFM-WebAgent-32B-RL checkpoint (or your own) and test dataset.
 2. Set environment variable `source environment.sh`.
 3. Set `model_path` in the `run_qwen.sh` script, and serve the model with the following command `evaluation/web_agent/run_qwen.sh`. After several minutes, the script will output like `URL Endpoint: http://10.77.225.92:10000/v1`.
-4. Choose from available test sets in `data/web_agent/test_benchmarks`: gaia, hle, webwalker, browsercomp.
+4. Choose from available test sets in `./AFM/data/web_agent/test_benchmarks`: gaia, hle, webwalker, browsercomp.
 5. Finally, set `URL` in `inference_web_agent.py` according to step3, and execute the python script to start webagent inference and evaluation.
 
 ```bash
-python evaluation/web_agent/inference_web_agent.py \
-    --infile  data/web_agent/test_benchmarks/gaia_dev_103.json \
-    --outfile evaluation/web_agent/results/webagent_out.jsonl
+python ./AFM/evaluation/web_agent/inference_web_agent.py \
+    --infile  ./AFM/data/web_agent/test_benchmarks/gaia_dev_103.json \
+    --outfile ./AFM/evaluation/web_agent/results/webagent_out.jsonl
 ```
 
 
 ### Code Agent Evaluation
-1. All math and code related evaluation datasets are stored in the `data/code_agent/code_math_benchmarks` folder. 
-2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `evaluation/code_agent/eval_code_agent.sh`, then run:
+1. All math and code related evaluation datasets are stored in the `./AFM/data/code_agent/code_math_benchmarks` folder. 
+2. Please fill in the downloaded code agent model AFM-CodeAgent-32B-rl and validation datasets in `./AFM/evaluation/code_agent/eval_code_agent.sh`, then run:
 
 ```bash
-bash evaluation/code_agent/eval_code_agent.sh
+bash ./AFM/evaluation/code_agent/eval_code_agent.sh
 ```
 
-In addition, if you want to evaluate livecodebench datasets, please use the scripts `data/code_agent/livecodebench_testcases/download_and_process.py` to generate corresponding testcases. We would like to thank the [Skywork-OR1](https://github.com/SkyworkAI/Skywork-OR1) for their open-source evaluation code. Our evaluation implementation for math and code training sets was inspired by and adapted from their work.
+In addition, if you want to evaluate livecodebench datasets, please use the scripts `./AFM/data/code_agent/livecodebench_testcases/download_and_process.py` to generate corresponding testcases. We would like to thank the [Skywork-OR1](https://github.com/SkyworkAI/Skywork-OR1) for their open-source evaluation code. Our evaluation implementation for math and code training sets was inspired by and adapted from their work.
 
 
 # Acknowledgement
