@@ -22,8 +22,28 @@ Recent advances in large language models (LLMs) and multi-agent systems have dem
 
 We propose:
 - **Chain-of-Agents (CoA)**: A paradigm enabling end-to-end complex problem-solving within one model
-- **Agent Foundation Models (AFMs)**: Models trained through our multi-agent distillation framework and agentic reinforcement learning
+- **Agent Foundation Model (AFM)**: Model trained through our multi-agent distillation framework and agentic reinforcement learning
 
+# SOTA Performance
+
+<div align="center">
+  <img src="./assets/performance.png" width="85%" height="auto" />
+</div>
+
+We present the **Chain-of-Agents Distillation framework**, a novel approach that significantly advances the capabilities of LLMs. By applying CoA distillation pipeline to Qwen-2.5 series models, we developed the Aengt Foundation Model (AFM), which achieves state-of-the-art performance across multiple benchmarks. For instance, our 32B AFM model reaches an average success rate of **55.3%** (**Pass@1**) on the GAIA benchmark. It also scores **11.1%** on BrowseComp, **63.0%** on WebWalker, and **18.0%** on HLE. The effectiveness of CoA distillation is further demonstrated by our 7B model, which achieves a remarkable **15.6%** on HLE.
+
+<div align="center">
+  <img src="./assets/tts_1.png" width="85%" height="auto" />
+</div>
+
+
+<div align="center">
+  <img src="./assets/tts.png" width="60%" height="auto" />
+</div>
+
+Test-time scaling also significantly enhances AFM's performance across all benchmarks: **AFM-Bo3** achieves **57.3%** on GAIA, **64.7%** on WebWalker, **11.3%** on BrowseComp and **23.0%** on HLE, while **AFM-Pass@3** reaches **69.9%** on GAIA, **78.7%** on WebWalker, **19.2%** on BrowseComp, and **33.2%** on HLE.
+
+We fully open-source our data, model, and training and inference code to ensure the reproducibility of our results. For more details, please refer to our [Technical Report](https://github.com/OPPO-PersonalAI/Agent_Foundation_Models/blob/main/assets/AFM.pdf).
 
 # Quick Feature Summary
 | Feature Category | Supported Capabilities|
@@ -36,8 +56,6 @@ We propose:
 
 
 # Table of Contents
-- [Overview](#overview)
-- [Quick Feature Summary](#quick-feature-summary)
 - [Running Examples](#running-examples)
   - [Training](#training)
     - [Supervised Fine-tuning](#supervised-fine-tuning)
