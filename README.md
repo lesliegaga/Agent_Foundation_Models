@@ -46,8 +46,9 @@ We propose:
       - [3. Start training with default parameters](#3-start-training-with-default-parameters)
     - [Reinforcement Learning](#reinforement-learning)
       - [1. Env Setup](#1-env-setup-1)
-      - [2. Tool Server Deployment](#2-tool-server-deployment)
-      - [3. Python Sandbox Usage](#3-python-sandbox-usage)
+      - [2. Tool usage](#2-tool-usage)
+        - [2.1 Search Servers](#21-search-servers)
+        - [2.2 Code Server(s)](#22-code-servers)
       - [4. Configuration](#4-configuration)
       - [5. Dataset Processing](#5-dataset-processing)
       - [6. Training](#6-training)
@@ -139,7 +140,8 @@ cd ..
 ```
 
 
-#### 2. Tool Server Deployment
+#### 2. Tool usage
+##### 2.1 Search Servers
 We have developed two server-side components to support web interactions:
 - A web search server
 - A page crawling server
@@ -147,7 +149,7 @@ We have developed two server-side components to support web interactions:
 For detailed deployment instructions, please refer to `tool_servers/tool_server_readme.md`.
 
 
-#### 3. Python Sandbox Usage
+##### 2.2 Code Server(s)
 Our Python executor leverages the powerful local isolation sandbox capabilities provided by [nsjail](https://github.com/google/nsjail). We greatly appreciate the nsjail project for enabling secure code execution.
 
 To use this feature during training, you need to:

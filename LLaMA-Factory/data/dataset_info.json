@@ -1,12 +1,12 @@
 {
   "web_agent_sft": {
-    "file_name": "path/to/AFM-CodeAgent-SFT-Dataset/CodeAgentSFTDataset.json"
+    "file_name": "path/to/AFM-WebAgent-SFT-Dataset/WebAgentSFTDataset.json"
   },
   "mhqa_agent_sft": {
     "file_name": "path/to/AFM-MHQA-Agent-SFT-Dataset/hotpotQA_nq_level1_level2_merge_first_second_filtered_multiprediction.json"
   },
   "code_agent_sft": {
-    "file_name": "path/to/AFM-WebAgent-SFT-Dataset/WebAgentSFTDataset.json"
+    "file_name": "path/to/AFM-CodeAgent-SFT-Dataset/CodeAgentSFTDataset.json"
   },
   "identity": {
     "file_name": "identity.json"
