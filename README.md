@@ -56,13 +56,17 @@ We fully open-source our data, model, and training and inference code to ensure 
 
 
 # Table of Contents
+- [Overview](#overview)
+- [SOTA Performance](#sota-performance)
+- [Quick Feature Summary](#quick-feature-summary)
+- [Table of Contents](#table-of-contents)
 - [Running Examples](#running-examples)
   - [Training](#training)
     - [Supervised Fine-tuning](#supervised-fine-tuning)
       - [1. Env Setup](#1-env-setup)
       - [2. Prepare SFT Dataset](#2-prepare-sft-dataset)
       - [3. Start training with default parameters](#3-start-training-with-default-parameters)
-    - [Reinforcement Learning](#reinforement-learning)
+    - [Reinforement Learning](#reinforement-learning)
       - [1. Env Setup](#1-env-setup-1)
       - [2. Tool usage](#2-tool-usage)
         - [2.1 Search Servers](#21-search-servers)
@@ -75,7 +79,7 @@ We fully open-source our data, model, and training and inference code to ensure 
     - [Web Agent Evaluation](#web-agent-evaluation)
     - [Code Agent Evaluation](#code-agent-evaluation)
 - [Acknowledgement](#acknowledgement)
-- [Citation](#citation)
+  - [Citation](#citation)
 - [Star](#star)
 
 
@@ -137,21 +141,26 @@ conda create -n afm python=3.10.14 -y
 conda activate afm
 
 # Phase 1
+pip install symeval@git+https://github.com/tongyx361/symeval.git@54c1a844ea4a6db486c5af8b5b4d2f383224a83b
+pip install latex2sympy2==1.9.1
+pip install --force-reinstall antlr4-python3-runtime==4.9.3
+
+# Phase 2
 cd verl
 pip install -r requirements.txt
 
-# Phase 2
+# Phase 3
 pip install --force-reinstall protobuf==5.29.5
 pip install --force-reinstall --no-deps grpcio-status==1.71.0 selenium==4.33.0
 
-# Phase 3
+# Phase 4
 cd ..
 git clone https://github.com/NVIDIA/apex.git  
 cd apex
 python -m pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 cd ..
 
-# Phase 4
+# Phase 5
 cd verl
 pip install -r requirements_sglang.txt
 cd ..

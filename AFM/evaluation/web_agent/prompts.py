@@ -1,6 +1,6 @@
 
 llm_evaluation_webthinker="""
-Please determine if the predicted answer is semantically equivalent to the labeled answer. 
+Please determine if the predicted answer is SEMANTICALLY equivalent to the labeled answer. 
 Question:  {question} 
 Labeled Answer:  {gt_answer} 
 Predicted Answer: {pred_answer}  
