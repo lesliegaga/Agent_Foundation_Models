@@ -283,11 +283,14 @@ Specifically, based on the LLaMA-Factory framework, we have modified the impleme
 ## Citation
 If you find `AFM` useful in your research or applications, we would appreciate it if you could cite our work:
 ```bibtex
-@article{chain-of-agents-2025,
-  title={Chain-of-Agents: End-to-End Agent Foundation Models via Multi-Agent Distillation and Agentic RL},
-  author={OPPO PersonalAI Lab},
-  journal={arXiv preprint arXiv:xxxx.xxxxx},
-  year={2025}
+@misc{li2025chainofagentsendtoendagentfoundation,
+      title={Chain-of-Agents: End-to-End Agent Foundation Models via Multi-Agent Distillation and Agentic RL}, 
+      author={Weizhen Li and Jianbo Lin and Zhuosong Jiang and Jingyi Cao and Xinpeng Liu and Jiayu Zhang and Zhenqiang Huang and Qianben Chen and Weichen Sun and Qiexiang Wang and Hongxuan Lu and Tianrui Qin and Chenghao Zhu and Yi Yao and Shuying Fan and Xiaowan Li and Tiannan Wang and Pai Liu and King Zhu and He Zhu and Dingfeng Shi and Piaohong Wang and Yeyi Guan and Xiangru Tang and Minghao Liu and Yuchen Eleanor Jiang and Jian Yang and Jiaheng Liu and Ge Zhang and Wangchunshu Zhou},
+      year={2025},
+      eprint={2508.13167},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2508.13167}, 
 }
 ```
 
