@@ -68,7 +68,6 @@ INFER_KWARGS = {
 def request_service(system, prompt, current_answer, url, key, model, stop_words=None, **kwargs):
     if stop_words is None:
         stop_words = [
-            "</wiki_search>", 
             "</web_search>", 
             "</crawl_page>",
             "</answer>", 
@@ -107,7 +106,7 @@ def request_service(system, prompt, current_answer, url, key, model, stop_words=
 
 def extract_specific_tag(text):
     from collections import deque
-    ALLOWED_TAGS = {'think', 'plan', 'reflection', 'suggested_answer', 'answer', 'wiki_search', 'web_search', 'crawl_page', 'double_check'}
+    ALLOWED_TAGS = {'think', 'plan', 'reflection', 'suggested_answer', 'answer', 'web_search', 'crawl_page', 'double_check'}
     tag_stack = deque()
     tag_pairs = []
     
@@ -200,9 +199,16 @@ def process_single_data(query, **kwargs):
         if item_type == "error" or content is None:
             error_count += 1
             continue
+        elif len(step_list) >= 5 and len(set(step_list[-5:])) == 1:
+            content = f"|<BEGIN_OF_DUPLICATE_FUNCTION>|{content}|<END_OF_DUPLICATE_FUNCTION>|You have previsouly output the same function. Please try to think differently with no more duplications."
+            result_list.append({
+                "type": item_type,
+                "content": content
+            })
+            current_answer += content
+            attempt += 1
         elif content_wo_think in "".join(current_answer):
             content = f"|<BEGIN_OF_DUPLICATE_CONTENT>|{content}|<END_OF_DUPLICATE_CONTENT>|You have previsouly output the same content. Please try to think differently with no more duplications."
-            logging.info(f"found duplicate step: {item_type} | {content_wo_think}")
             result_list.append({
                 "type": item_type,
                 "content": content
@@ -400,7 +406,7 @@ def process_queries(infile, outfile, q_key, a_key, **kwargs):
         result_queue.put(None)
         writer_future.result()
 
-    logging.info(f"Running Successed: {stats['success']}, Failed: {stats['failed']}, Total: {len(new_questions_data)}")
+    logging.info(f"Running Successed: {stats['success']}, Failed: {stats['failed']}, Total: {len(questions_data)}")
     return outfile
 
 
