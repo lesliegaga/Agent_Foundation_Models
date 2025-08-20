@@ -6,7 +6,7 @@
 
 <div align="center">
   <a href='https://chain-of-agents-afm.github.io/'><img src='https://img.shields.io/badge/Project-Github-red?logo=GitHub&logoWidth=40'></a>
-  <a href='https://raw.githubusercontent.com/OPPO-PersonalAI/Agent_Foundation_Models/refs/heads/main/assets/AFM.pdf'><img src='https://img.shields.io/badge/Paper AFM-arXiv-d63031?logo=arxiv&logoColor=white'></a>
+  <a href='https://arxiv.org/abs/2508.13167'><img src='https://img.shields.io/badge/Paper AFM-arXiv-d63031?logo=arxiv&logoColor=white'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-689200e11d0b21a67c015ba8'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Models-Huggingface-yellow'></a>
   <a href='https://huggingface.co/collections/PersonalAILab/afm-datasets-6892140eaad360ea5ccdcde1'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Datasets-Huggingface-yellow'></a>
 </div>
@@ -43,7 +43,7 @@ We present the **Chain-of-Agents Distillation framework**, a novel approach that
 
 Test-time scaling also significantly enhances AFM's performance across all benchmarks: **AFM-Bo3** achieves **57.3%** on GAIA, **64.7%** on WebWalker, **11.3%** on BrowseComp and **23.0%** on HLE, while **AFM-Pass@3** reaches **69.9%** on GAIA, **78.7%** on WebWalker, **19.2%** on BrowseComp, and **33.2%** on HLE.
 
-We fully open-source our data, model, and training and inference code to ensure the reproducibility of our results. For more details, please refer to our [Technical Report](https://github.com/OPPO-PersonalAI/Agent_Foundation_Models/blob/main/assets/AFM.pdf).
+We fully open-source our data, model, and training and inference code to ensure the reproducibility of our results. For more details, please refer to our [Technical Report](https://arxiv.org/pdf/2508.13167).
 
 # Quick Feature Summary
 | Feature Category | Supported Capabilities|
