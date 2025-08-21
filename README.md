@@ -30,7 +30,7 @@ We propose:
   <img src="./assets/performance.png" width="85%" height="auto" />
 </div>
 
-We present the **Chain-of-Agents Distillation framework**, a novel approach that significantly advances the capabilities of LLMs. By applying CoA distillation pipeline to Qwen-2.5 series models, we developed the Aengt Foundation Model (AFM), which achieves state-of-the-art performance across multiple benchmarks. For instance, our 32B AFM model reaches an average success rate of **55.3%** (**Pass@1**) on the GAIA benchmark. It also scores **11.1%** on BrowseComp, **63.0%** on WebWalker, and **18.0%** on HLE. The effectiveness of CoA distillation is further demonstrated by our 7B model, which achieves a remarkable **15.6%** on HLE.
+We present the **Chain-of-Agents Distillation framework**, a novel approach that significantly advances the capabilities of LLMs. By applying CoA distillation pipeline to Qwen-2.5 series models, we developed the Agent Foundation Model (AFM), which achieves state-of-the-art performance across multiple benchmarks. For instance, our 32B AFM model reaches an average success rate of **55.3%** (**Pass@1**) on the GAIA benchmark. It also scores **11.1%** on BrowseComp, **63.0%** on WebWalker, and **18.0%** on HLE. The effectiveness of CoA distillation is further demonstrated by our 7B model, which achieves a remarkable **15.6%** on HLE.
 
 <div align="center">
   <img src="./assets/tts_1.png" width="85%" height="auto" />
