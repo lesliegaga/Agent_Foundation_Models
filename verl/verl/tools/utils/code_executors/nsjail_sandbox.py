@@ -40,7 +40,7 @@ class NsjailSandbox:
         if not self.nsjail_path:
             raise ValueError("nsjail_path not set")
     
-    def parse_code_blobs_stdin_answer(self, code_blob: str) -> tuple[str,str]:
+    def parse_code_blobs_stdin_answer(self, code_blob: str) -> tuple[bool,str,str]:
         """Parses the LLM's output to get any code blob inside. Will return the code directly if it's code."""
         parts = code_blob.split('<answer>', 1)
         is_final_answer = False
@@ -194,7 +194,7 @@ class NsjailSandbox:
                 "--group", "nogroup",
                 "--chroot", "/",
                 "--cwd", "/tmp/workspace",
-                "--rlimit_as", "5000",  # 50GB memory limit
+                "--rlimit_as", "5000",  # (MB) 4.88GB memory limit 
                 "--rlimit_cpu", "5",    # 5-second CPU time limit
                 "--bindmount_ro", "/opt:/opt",
                 "--bindmount_ro", f"{code_path}:/tmp/code.py",
