@@ -40,7 +40,7 @@ class NsjailSandbox:
         if not self.nsjail_path:
             raise ValueError("nsjail_path not set")
     
-    def parse_code_blobs_stdin_answer(self, code_blob: str) -> tuple[str,str]:
+    def parse_code_blobs_stdin_answer(self, code_blob: str) -> tuple[bool,str,str]:
         """Parses the LLM's output to get any code blob inside. Will return the code directly if it's code."""
         parts = code_blob.split('<answer>', 1)
         is_final_answer = False
