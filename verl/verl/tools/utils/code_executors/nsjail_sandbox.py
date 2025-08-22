@@ -194,7 +194,7 @@ class NsjailSandbox:
                 "--group", "nogroup",
                 "--chroot", "/",
                 "--cwd", "/tmp/workspace",
-                "--rlimit_as", "5000",  # 50GB memory limit
+                "--rlimit_as", "5000",  # (MB) 4.88GB memory limit 
                 "--rlimit_cpu", "5",    # 5-second CPU time limit
                 "--bindmount_ro", "/opt:/opt",
                 "--bindmount_ro", f"{code_path}:/tmp/code.py",
