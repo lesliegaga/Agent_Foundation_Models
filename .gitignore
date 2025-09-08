@@ -1,4 +1,4 @@
-**evaluation/web_agent/results**
+**AFM/evaluation/web_agent/results**
 **cache**
 **notes**
 **pid
@@ -154,3 +154,6 @@ outputs
 tensorboard_log/
 
 path_to_your_database.db
+
+# server cache
+!AFM/tool_servers/web_server/v2/cache_serper_server_v2.py
