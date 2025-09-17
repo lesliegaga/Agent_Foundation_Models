@@ -9,6 +9,12 @@ export NODE_RANK
 CUDA_VISIBLE_DEVICES=4,5,6,7
 export CUDA_VISIBLE_DEVICES
 
+# 解析脚本所在目录，构造 DeepSpeed 配置的绝对路径，避免多进程相对路径失效
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# 项目根目录：从当前脚本向上四级到仓库根
+REPO_ROOT=$(cd "$SCRIPT_DIR/../../../.." && pwd)
+DS_CONFIG="$REPO_ROOT/LLaMA-Factory/examples/deepspeed/ds_z3_config.json"
+
 STAGE=sft
 finetuning_type=full
 OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft"
@@ -52,7 +58,7 @@ for LR in "${LEARNING_RATES[@]}"; do
                 
                 llama_factory_status=0
                 llama_factory_output=$(llamafactory-cli train \
-                 --deepspeed examples/deepspeed/ds_z3_config.json \
+                 --deepspeed "$DS_CONFIG" \
                   --model_name_or_path "$MODEL_PATH" \
                   --trust_remote_code \
                   --stage $STAGE \
