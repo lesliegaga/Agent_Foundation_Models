@@ -28,8 +28,8 @@ ignore_observation_token=observation
 DATA_DATA="web_agent_sft"
 TEMPALTE=qwen
 
-SWANLAB_API_KEY=xxx
-SWANLAB_PROJECT=xxx
+SWANLAB_API_KEY=ZjDMPe0DCAnwiVUndD5sB
+SWANLAB_PROJECT=web_agent_sft
 
 LEARNING_RATES=("1.4e-5")
 WARMUP_RATIOS=("0.1")
