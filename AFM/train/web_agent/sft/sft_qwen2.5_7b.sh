@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
-MODEL_PATH="path of your Qwen2.5-7B"
+MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen2.5-7B-Instruct"
 
 export NNODES=1
 NODE_RANK=${RANK:-0}
 export NODE_RANK
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+CUDA_VISIBLE_DEVICES=4,5,6,7
 
 STAGE=sft
 finetuning_type=full
-OUTPUT_DIR_BASE="your save path"
+OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft"
 EPOCHS=4.0
 PRECISION="bf16"
 CUTOFF_LEN=32768
@@ -18,7 +18,7 @@ ignore_observation=true
 ignore_observation_token=observation
 
 # prepare the dataset file name on your dataset_info.json about the "./AFM-WebAgent-SFT-Dataset".
-DATA_DATA="dataset file name from your dataset_info.json"
+DATA_DATA="web_agent_sft"
 TEMPALTE=qwen
 
 SWANLAB_API_KEY=xxx
@@ -45,7 +45,7 @@ for LR in "${LEARNING_RATES[@]}"; do
                 EXPERIMENT_COUNTER=$((EXPERIMENT_COUNTER + 1))
                 EXPERIMENT_ID="exp_${EXPERIMENT_COUNTER}_lr${LR}_wr${WR}_bs${BS}_ga${GA}"
                 CURRENT_OUTPUT_DIR="${OUTPUT_DIR_BASE}/${EXPERIMENT_ID}"
-                SWANLAB_EXPERIMENT_NAME="qwen2.5_32b_${EXPERIMENT_ID}"
+                SWANLAB_EXPERIMENT_NAME="qwen2.5_7b_${EXPERIMENT_ID}"
                 
                 EXPERIMENT_START_TIME=$(date +%s)
                 
