@@ -7,6 +7,7 @@ export NNODES=1
 NODE_RANK=${RANK:-0}
 export NODE_RANK
 CUDA_VISIBLE_DEVICES=4,5,6,7
+export CUDA_VISIBLE_DEVICES
 
 STAGE=sft
 finetuning_type=full
