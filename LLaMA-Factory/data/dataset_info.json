@@ -1,12 +1,12 @@
 {
   "web_agent_sft": {
-    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-WebAgent-SFT-Dataset/dataset_dict.json"
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-WebAgent-SFT-Dataset"
   },
   "mhqa_agent_sft": {
-    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-MHQA-Agent-SFT-Dataset/dataset_dict.json"
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-MHQA-Agent-SFT-Dataset"
   },
   "code_agent_sft": {
-    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-CodeAgent-SFT-Dataset/dataset_dict.json"
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-CodeAgent-SFT-Dataset"
   },
   "identity": {
     "file_name": "identity.json"
