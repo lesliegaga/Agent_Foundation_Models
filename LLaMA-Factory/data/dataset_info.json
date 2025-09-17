@@ -1,6 +1,6 @@
 {
   "web_agent_sft": {
-    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-WebAgent-SFT-Dataset"
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/amap_search_rag_AFM-WebAgent-SFT-Dataset_20250917180727/WebAgentSFTDataset.json"
   },
   "mhqa_agent_sft": {
     "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-MHQA-Agent-SFT-Dataset"
