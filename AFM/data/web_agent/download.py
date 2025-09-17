@@ -9,5 +9,5 @@ from datasets import load_dataset
 
 
 from datasets import download_dataset
-download_dataset("amap_search_rag/AFM-WebAgent-SFT-Dataset",local_dir="./AFM-WebAgent-SFT-Dataset")
-download_dataset("amap_search_rag/AFM-WebAgent-RL-Dataset",local_dir="./AFM-WebAgent-RL-Dataset")
+download_dataset("amap_search_rag/AFM-WebAgent-SFT-Dataset",local_dir="./")
+download_dataset("amap_search_rag/AFM-WebAgent-RL-Dataset",local_dir="./")
