@@ -58,6 +58,7 @@ for LR in "${LEARNING_RATES[@]}"; do
                 
                 llama_factory_status=0
                 llama_factory_output=$(llamafactory-cli train \
+                 --dataset_dir "$REPO_ROOT/LLaMA-Factory/data" \
                  --deepspeed "$DS_CONFIG" \
                   --model_name_or_path "$MODEL_PATH" \
                   --trust_remote_code \
