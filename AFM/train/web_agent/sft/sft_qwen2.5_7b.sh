@@ -20,7 +20,8 @@ finetuning_type=full
 OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft"
 EPOCHS=4.0
 PRECISION="bf16"
-CUTOFF_LEN=32768
+# CUTOFF_LEN=32768
+CUTOFF_LEN=16384
 ignore_observation=true
 ignore_observation_token=observation
 
