@@ -142,8 +142,6 @@ conda activate afm
 
 # Phase 1
 pip install symeval@git+https://github.com/tongyx361/symeval.git@54c1a844ea4a6db486c5af8b5b4d2f383224a83b
-# or 
-#pip install symeval@git+ssh://git@github.com/tongyx361/symeval.git@54c1a844ea4a6db486c5af8b5b4d2f383224a83b
 pip install latex2sympy2==1.9.1
 pip install --force-reinstall antlr4-python3-runtime==4.9.3
 
