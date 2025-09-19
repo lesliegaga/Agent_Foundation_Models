@@ -1,6 +1,17 @@
 #!/bin/bash
 set -e
 
+# 设置日志文件路径
+LOG_DIR="logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/web_agent_sft_qwen2.5_7b_$(date +%Y%m%d_%H%M%S).log"
+
+# 重定向所有输出到日志文件
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "=== 训练开始时间: $(date) ==="
+echo "=== 日志文件: $LOG_FILE ==="
+
 MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen2.5-7B-Instruct"
 
 export NNODES=1
@@ -57,8 +68,12 @@ for LR in "${LEARNING_RATES[@]}"; do
                 
                 EXPERIMENT_START_TIME=$(date +%s)
                 
+                echo "=== 开始实验 $EXPERIMENT_ID ==="
+                echo "=== 参数: LR=$LR, WR=$WR, BS=$BS, GA=$GA ==="
+                
                 llama_factory_status=0
-                llama_factory_output=$(llamafactory-cli train \
+                # 直接执行训练命令，输出会自动重定向到日志文件
+                llamafactory-cli train \
                  --dataset_dir "$REPO_ROOT/LLaMA-Factory/data" \
                  --deepspeed "$DS_CONFIG" \
                   --model_name_or_path "$MODEL_PATH" \
@@ -84,19 +99,23 @@ for LR in "${LEARNING_RATES[@]}"; do
                   --swanlab_api_key $SWANLAB_API_KEY \
                   --swanlab_project $SWANLAB_PROJECT \
                   --ignore_observation_token $ignore_observation_token \
-                  --ignore_observation $ignore_observation 2>&1) || llama_factory_status=$?
+                  --ignore_observation $ignore_observation || llama_factory_status=$?
                 
                 EXPERIMENT_END_TIME=$(date +%s)
                 EXPERIMENT_DURATION=$((EXPERIMENT_END_TIME - EXPERIMENT_START_TIME))
                 
                 if [ $llama_factory_status -eq 0 ]; then
+                    echo "=== 实验 $EXPERIMENT_ID 成功完成 ==="
+                    echo "=== 训练时长: $EXPERIMENT_DURATION 秒 ==="
                     
-                    LOSS=$(echo "$llama_factory_output" | grep -oP 'loss: \K[\d.]+' | tail -1)
-                    PERPLEXITY=$(echo "$llama_factory_output" | grep -oP 'perplexity: \K[\d.]+' | tail -1)
+                    # 从日志文件中提取loss和perplexity（如果存在）
+                    LOSS=$(grep -oP 'loss: \K[\d.]+' "$LOG_FILE" | tail -1 || echo "")
+                    PERPLEXITY=$(grep -oP 'perplexity: \K[\d.]+' "$LOG_FILE" | tail -1 || echo "")
                     
                     echo "$LR,$WR,$BS,$GA,$LOSS,$PERPLEXITY,$EXPERIMENT_DURATION" >> grid_search_results/results_summary.csv
                 else
-                    echo "$llama_factory_output" | tee -a $RESULT_FILE
+                    echo "=== 实验 $EXPERIMENT_ID 失败 ==="
+                    echo "=== 错误代码: $llama_factory_status ==="
                 fi
                 
                 ELAPSED_TIME=$((EXPERIMENT_END_TIME - START_TIME))
@@ -111,3 +130,7 @@ done
 
 END_TIME=$(date +%s)
 TOTAL_DURATION=$((END_TIME - START_TIME))
+
+echo "=== 所有实验完成 ==="
+echo "=== 总耗时: $TOTAL_DURATION 秒 ==="
+echo "=== 日志文件: $LOG_FILE ==="
