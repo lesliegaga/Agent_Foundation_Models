@@ -142,11 +142,14 @@ conda activate afm
 
 # Phase 1
 pip install symeval@git+https://github.com/tongyx361/symeval.git@54c1a844ea4a6db486c5af8b5b4d2f383224a83b
+# or 
+#pip install symeval@git+ssh://git@github.com/tongyx361/symeval.git@54c1a844ea4a6db486c5af8b5b4d2f383224a83b
 pip install latex2sympy2==1.9.1
 pip install --force-reinstall antlr4-python3-runtime==4.9.3
 
 # Phase 2
 cd verl
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0
 pip install -r requirements.txt
 
 # Phase 3
