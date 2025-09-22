@@ -153,12 +153,14 @@ pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0
 pip install -r requirements.txt
 
 # Phase 3
-pip install --force-reinstall protobuf==5.29.5
+pip install --force-reinstall protobuf==5.29.3
 pip install --force-reinstall --no-deps grpcio-status==1.71.0 selenium==4.33.0
 
 # Phase 4
 cd ..
 git clone https://github.com/NVIDIA/apex.git  
+# or
+#git clone git@github.com:NVIDIA/apex.git
 cd apex
 python -m pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --global-option="--cpp_ext" --global-option="--cuda_ext" ./
 cd ..
@@ -187,8 +189,33 @@ To use this feature during training, you need to:
 1. Clone and build nsjail
     ```bash
     git clone https://github.com/google/nsjail.git
+    sudo yum install -y gcc gcc-c++ make pkgconfig \
+    protobuf-devel protobuf-compiler libnl3-devel libcap-devel \
+    flex bison \
+    kernel-headers kernel-devel glibc-headers glibc-devel
+    # 若 protobuf 安装在自定义路径（如 /usr/local），需要：
+    # export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:$PKG_CONFIG_PATH
     cd nsjail
+
+    conda install -y -c conda-forge libprotobuf=5.29.3 protobuf=5.29.3 pkg-config
+    make clean
+    env -i PATH=$CONDA_PREFIX/bin:/usr/bin:/bin PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig LD_LIBRARY_PATH=$CONDA_PREFIX/lib CXXFLAGS="-Wno-deprecated-declarations" make -j"$(nproc)"
     make
+    # 1. 创建 afm 环境的激活脚本
+    mkdir -p $CONDA_PREFIX/etc/conda/activate.d
+    cat > $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh << 'EOF'
+    #!/bin/bash
+    export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+    EOF
+
+    # 2. 创建停用脚本
+    mkdir -p $CONDA_PREFIX/etc/conda/deactivate.d
+    cat > $CONDA_PREFIX/etc/conda/deactivate.d/env_vars.sh << 'EOF'
+    #!/bin/bash
+    export LD_LIBRARY_PATH=$(echo $LD_LIBRARY_PATH | sed "s|$CONDA_PREFIX/lib:||g")
+    EOF
+
+    ./nsjail --help
     ```
 2. Add the absolute path to the nsjail_path in code tool configuration file `verl/verl/tools/config/code_tool_config/code_executor.yaml`:
    ```yaml

@@ -5,7 +5,7 @@ tools:
       num_workers: 120
       memory_limit: 10*1024**3  # MB
       timeout: 30   # second
-      nsjail_path: "/abs_path/to/your/nsjail/nsjail"   # path to the nsjail sandbox executable file
+      nsjail_path: "/home/tongyan.zjy/workspace/git/nsjail/nsjail"   # path to the nsjail sandbox executable file
       max_obs_length: 512   # str-level observation len limit
     tool_schema:  # OpenAIFunctionToolSchema
       type: function
