@@ -7,7 +7,7 @@ retriever_name=e5
 retriever_path=/mnt/tongyan.zjy/openlm/model/intfloat/e5-base-v2
 port=8000
 
-python server/wiki_rag_server.py --index_path $index_file \
+python -u wiki_rag_server.py --index_path $index_file \
                                             --corpus_path $corpus_file \
                                             --topk 3 \
                                             --retriever_name $retriever_name \
