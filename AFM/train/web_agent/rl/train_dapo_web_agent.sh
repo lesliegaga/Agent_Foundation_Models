@@ -40,6 +40,13 @@ export EXPERIMENT_NAME="DAPO-QWEN7B-WebAgent"
 export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft/exp_1_lr1.4e-5_wr0.1_bs1_ga16"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
+export RAY_NAMESPACE="${EXPERIMENT_NAME}"
+export RAY_MEMORY="6GB"
+export RAY_OBJECT_STORE_MEMORY="4GB"
+export RAY_TMPDIR="${EXPERIMENT_DIR}/.ray_tmp"
+mkdir -p "$RAY_TMPDIR"
+export RAY_DEDUP_LOGS=0
+export RAY_BACKEND_LOG_LEVEL=debug
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
 VAL_DATASETS="" # "your val datasets"
 # =====================================================================================================================
