@@ -41,13 +41,10 @@ export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft/exp_1_lr1.4e-
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 export RAY_NAMESPACE="${EXPERIMENT_NAME}"
-export RAY_MEMORY="6GB"
-export RAY_OBJECT_STORE_MEMORY="4GB"
-if [ -d "/dev/shm" ]; then
-export RAY_TMPDIR="/dev/shm/ray"
-else
+export RAY_MEMORY="64GB"
+export RAY_OBJECT_STORE_MEMORY="16GB"
+export RAY_DISABLE_DASHBOARD=1
 export RAY_TMPDIR="/tmp/ray"
-fi
 mkdir -p "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
