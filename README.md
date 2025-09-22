@@ -193,8 +193,6 @@ To use this feature during training, you need to:
     protobuf-devel protobuf-compiler libnl3-devel libcap-devel \
     flex bison \
     kernel-headers kernel-devel glibc-headers glibc-devel
-    # 若 protobuf 安装在自定义路径（如 /usr/local），需要：
-    # export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:$PKG_CONFIG_PATH
     cd nsjail
 
     conda install -y -c conda-forge libprotobuf=5.29.3 protobuf=5.29.3 pkg-config

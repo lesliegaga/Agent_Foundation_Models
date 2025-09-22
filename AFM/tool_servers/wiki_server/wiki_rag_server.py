@@ -200,7 +200,12 @@ class DenseRetriever(BaseRetriever):
             co = faiss.GpuMultipleClonerOptions()
             co.useFloat16 = True
             co.shard = True
-            self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            try:
+                self.index = faiss.index_cpu_to_all_gpus(self.index, co=co)
+            except RuntimeError as e:
+                # GPU 资源不足时，回退到 CPU 索引，保证服务可用性
+                warnings.warn(f"FAISS GPU init failed, fallback to CPU index. Error: {e}", stacklevel=2)
+                self.index = faiss.read_index(self.index_path)
 
         self.corpus = load_corpus(self.corpus_path)
         self.encoder = Encoder(model_name=self.retrieval_method, model_path=config.retrieval_model_path, pooling_method=config.retrieval_pooling_method, max_length=config.retrieval_query_max_length, use_fp16=config.retrieval_use_fp16)
@@ -404,6 +409,8 @@ if __name__ == "__main__":
     parser.add_argument("--retriever_name", type=str, default="e5", help="Name of the retriever model.")
     parser.add_argument("--retriever_model", type=str, default="intfloat/e5-base-v2", help="Path of the retriever model.")
     parser.add_argument("--faiss_gpu", action="store_true", help="Use GPU for computation")
+    parser.add_argument("--batch_size", type=int, default=512, help="Batch size for dense retrieval encoding.")
+    parser.add_argument("--max_length", type=int, default=256, help="Max sequence length for the encoder tokenizer.")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
 
@@ -421,9 +428,9 @@ if __name__ == "__main__":
         faiss_gpu=args.faiss_gpu,
         retrieval_model_path=args.retriever_model,
         retrieval_pooling_method="mean",
-        retrieval_query_max_length=256,
+        retrieval_query_max_length=args.max_length,
         retrieval_use_fp16=True,
-        retrieval_batch_size=512,
+        retrieval_batch_size=args.batch_size,
     )
 
     retriever = get_retriever(config)
