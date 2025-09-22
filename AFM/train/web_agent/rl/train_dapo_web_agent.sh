@@ -22,7 +22,7 @@ actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
 SP_SIZE=8
-GEN_TP=8
+GEN_TP=4 # 和CUDA_VISIBLE_DEVICES的GPU数量一致
 use_dynamic_bsz=True
 offload=True
 # =====================================================================================================================
@@ -31,7 +31,7 @@ offload=True
 CURRENT_DIR=$(pwd)
 # NOTE: We recommend to use wandb as log backend. Export your own wandb project and key to use it.
 export WANDB_MODE="offline"
-export NNODES=8
+export NNODES=1 # 单机为1，多机为实际GPU数量
 export PROJECT_NAME="agent_foundation_models"
 EXPERIMENT_DIR=$(dirname "$(readlink -f "$0")")
 # export EXPERIMENT_NAME="DAPO-QWEN32B-WebAgent"
@@ -39,6 +39,7 @@ export EXPERIMENT_NAME="DAPO-QWEN7B-WebAgent"
 # export BASE_MODEL="${CURRENT_DIR}/AFM/models/web_agent/AFM-WebAgent-32B-sft"   # your train model path
 export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft/exp_1_lr1.4e-5_wr0.1_bs1_ga16"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
 VAL_DATASETS="" # "your val datasets"
 # =====================================================================================================================
@@ -106,7 +107,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.val_only=false \
     trainer.val_before_train=false \
     trainer.default_hdfs_dir=null \
-    trainer.n_gpus_per_node=8 \
+    trainer.n_gpus_per_node=4 \
     trainer.nnodes=$NNODES \
     trainer.save_freq=5 \
     trainer.test_freq=1000 \
@@ -127,3 +128,5 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     custom_reward_function.val_path="${CURRENT_DIR}/verl/verl/utils/reward_score/grm_simple.py" \
     custom_reward_function.val_name="compute_score_grm_batch" \
     2>&1 | tee $EXPERIMENT_DIR/$EXPERIMENT_NAME.log
+
+# n_gpus_per_node 和 CUDA_VISIBLE_DEVICES的GPU数量一致
