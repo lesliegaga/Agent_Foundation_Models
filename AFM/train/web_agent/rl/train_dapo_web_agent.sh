@@ -44,10 +44,14 @@ export RAY_NAMESPACE="${EXPERIMENT_NAME}"
 export RAY_MEMORY="64GB"
 export RAY_OBJECT_STORE_MEMORY="16GB"
 export RAY_DISABLE_DASHBOARD=1
-export RAY_TMPDIR="/tmp/ray"
+export RAY_TMPDIR="/tmp"
 mkdir -p "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
+export RAY_NODE_IP_ADDRESS=127.0.0.1
+export RAY_DASHBOARD_HOST=127.0.0.1
+export RAY_AGENT_PORT=0
+export RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS=120000
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
 VAL_DATASETS="" # "your val datasets"
 # =====================================================================================================================
