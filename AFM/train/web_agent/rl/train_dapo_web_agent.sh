@@ -56,6 +56,7 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 #                                      Train
 # =====================================================================================================================
 cd verl
+ray stop --force >/dev/null 2>&1 || true
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=true \
@@ -92,7 +93,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.max_model_len=${actor_ppo_max_token_len} \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
-    actor_rollout_ref.rollout.name=sglang_async \
+    actor_rollout_ref.rollout.name=sglang \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.3 \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
@@ -119,7 +120,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.default_local_dir="${EXPERIMENT_DIR}/${EXPERIMENT_NAME}" \
     actor_rollout_ref.rollout.multi_turn.enable=true \
     actor_rollout_ref.rollout.multi_turn.max_turns=25 \
-    actor_rollout_ref.rollout.multi_turn.format=qwen \
+    +actor_rollout_ref.rollout.multi_turn.format=qwen \
     actor_rollout_ref.rollout.multi_turn.use_xml_tool_parser=true \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$SEARCH_CONFIG" \
     reward_model.reward_manager="batch" \
