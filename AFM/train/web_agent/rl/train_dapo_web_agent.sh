@@ -43,7 +43,11 @@ export CUDA_VISIBLE_DEVICES="0,1,2,3"
 export RAY_NAMESPACE="${EXPERIMENT_NAME}"
 export RAY_MEMORY="6GB"
 export RAY_OBJECT_STORE_MEMORY="4GB"
-export RAY_TMPDIR="${EXPERIMENT_DIR}/.ray_tmp"
+if [ -d "/dev/shm" ]; then
+export RAY_TMPDIR="/dev/shm/ray"
+else
+export RAY_TMPDIR="/tmp/ray"
+fi
 mkdir -p "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
