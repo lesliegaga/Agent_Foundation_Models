@@ -41,6 +41,8 @@ export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft/exp_1_lr1.4e-
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 export RAY_NAMESPACE="${EXPERIMENT_NAME}"
+unset RAY_MEMORY
+unset RAY_OBJECT_STORE_MEMORY
 export RAY_DISABLE_DASHBOARD=0
 export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
 export RAY_DEDUP_LOGS=0
@@ -53,6 +55,8 @@ export RAY_WORKER_REGISTER_TIMEOUT_SECONDS=120
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
 export RAY_DASHBOARD_HOST="127.0.0.1"
+unset RAY_AGENT_PORT
+unset RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
 VAL_DATASETS="${TRAIN_DATASETS}" # "your val datasets"
 # =====================================================================================================================
