@@ -144,6 +144,10 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     custom_reward_function.train_name="compute_score_grm_batch" \
     custom_reward_function.val_path="${CURRENT_DIR}/verl/verl/utils/reward_score/grm_simple.py" \
     custom_reward_function.val_name="compute_score_grm_batch" \
+    hydra.run.dir=. \
+    hydra.output_subdir=null \
+    hydra.job_logging=disabled \
+    hydra.hydra_logging=disabled \
     2>&1 | tee $EXPERIMENT_DIR/$EXPERIMENT_NAME.log
 
 # n_gpus_per_node 和 CUDA_VISIBLE_DEVICES的GPU数量一致
