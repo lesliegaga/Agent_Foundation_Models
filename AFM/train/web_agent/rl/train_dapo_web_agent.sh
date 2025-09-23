@@ -41,18 +41,18 @@ export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/web_agent_sft/exp_1_lr1.4e-
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 export RAY_NAMESPACE="${EXPERIMENT_NAME}"
-export RAY_MEMORY="64GB"
-export RAY_OBJECT_STORE_MEMORY="16GB"
+unset RAY_MEMORY
+unset RAY_OBJECT_STORE_MEMORY
 export RAY_DISABLE_DASHBOARD=0
-export RAY_TMPDIR="/tmp"
-mkdir -p "$RAY_TMPDIR"
+export RAY_TMPDIR="/tmp/ray"
+mkdir -p "$RAY_TMPDIR" && chmod 777 "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
 # 让 Ray 自动检测并使用真实主机 IP，避免 runtime env agent 绑定到不可达地址
 unset RAY_NODE_IP_ADDRESS
 unset RAY_DASHBOARD_HOST
-export RAY_AGENT_PORT=0
-export RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS=120000
+unset RAY_AGENT_PORT
+unset RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
 VAL_DATASETS="" # "your val datasets"
 # =====================================================================================================================
