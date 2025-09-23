@@ -76,16 +76,28 @@ ray start --head --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-h
 # 解析当前 Ray 会话的 GCS 地址，传给 Python 端显式连接
 SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/ports_by_node.json" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
-    NODE_IP=$(cat "$SESSION_DIR/node_ip_address.json" 2>/dev/null | sed 's/"//g')
-    GCS_PORT=$(python3 - <<'PY'
-import json,sys,os
-p=os.environ.get('SESSION_DIR','')+"/ports_by_node.json"
-d=json.load(open(p))
-print(d.get('gcs',0))
+    export SESSION_DIR
+    PY_OUT=$(python3 - <<'PY'
+import json, os, sys
+sd = os.environ.get('SESSION_DIR','')
+try:
+    with open(os.path.join(sd, 'node_ip_address.json')) as f:
+        ip_json = json.load(f)
+    if isinstance(ip_json, dict):
+        ip = ip_json.get('node_ip_address') or ip_json.get('ip') or ''
+    else:
+        ip = str(ip_json).strip('"')
+    with open(os.path.join(sd, 'ports_by_node.json')) as f:
+        ports = json.load(f)
+    gcs = ports.get('gcs') or ports.get('gcs_server') or ports.get('gcs_server_port')
+    if ip and gcs:
+        print(f"{ip}:{gcs}")
+except Exception:
+    pass
 PY
 )
-    if [ -n "$NODE_IP" ] && [ -n "$GCS_PORT" ] && [ "$GCS_PORT" != "0" ]; then
-        export RAY_GCS_ADDRESS="$NODE_IP:$GCS_PORT"
+    if [ -n "$PY_OUT" ]; then
+        export RAY_GCS_ADDRESS="$PY_OUT"
         echo "[train_sh] RAY_GCS_ADDRESS=$RAY_GCS_ADDRESS"
     fi
 fi
