@@ -37,22 +37,14 @@ def run_ppo(config) -> None:
     print("[main_ppo] Running PPO training...")
     # Check if Ray is not initialized
     if not ray.is_initialized():
-        # 连接到已预启动的本地 Ray 集群，显式使用脚本导出的 GCS 地址，避免 auto 模式在 runtime env 初始化阶段阻塞
-        gcs_address = os.environ.get("RAY_GCS_ADDRESS")
-        print(f"[main_ppo] Connecting Ray via GCS address: {gcs_address}")
-        try:
-            if gcs_address:
-                ray.init(address=gcs_address)
-                print("[main_ppo] Connected to Ray cluster via explicit GCS address.")
-            else:
-                print("[main_ppo] Connecting to Ray cluster with auto...")
-                ray.init(address="auto")
-                print("[main_ppo] Connected to Ray cluster with auto.")
-        except Exception as e:
-            print(f"Failed to connect to Ray cluster: {e}")
-            # 回退到本地初始化（用于开发环境）
-            ray.init(num_cpus=config.ray_init.num_cpus)
-            print("[main_ppo] Connected to Ray cluster with local initialization.")
+        # Initialize Ray with a local cluster configuration
+        # Set environment variables in the runtime environment to control tokenizer parallelism,
+        # NCCL debug level, VLLM logging level, and allow runtime LoRA updating
+        # `num_cpus` specifies the number of CPU cores Ray can use, obtained from the configuration
+        ray.init(
+            runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
+            num_cpus=config.ray_init.num_cpus,
+        )
 
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete
@@ -64,9 +56,9 @@ def run_ppo(config) -> None:
         runner = TaskRunner.remote()
     print("[main_ppo] Submitting TaskRunner.run ...")
     try:
-        ray.get(runner.run.remote(config), timeout=300)
+        ray.get(runner.run.remote(config))
     except Exception as e:
-        print(f"[main_ppo] TaskRunner.run timed out or failed: {e}")
+        print(f"[main_ppo] TaskRunner.run failed: {e}")
         raise
 
     # [Optional] get the path of the timeline trace file from the configuration, default to None
