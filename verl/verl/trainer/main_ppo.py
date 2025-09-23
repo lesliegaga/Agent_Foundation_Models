@@ -34,12 +34,15 @@ def main(config):
 
 # Define a function to run the PPO-like training process
 def run_ppo(config) -> None:
+    print("[main_ppo] Running PPO training...")
     # Check if Ray is not initialized
     if not ray.is_initialized():
         # 连接到已预启动的本地 Ray 集群，避免嵌入式启动 runtime env agent 带来的不稳定
         try:
+            print("[main_ppo] Connecting to Ray cluster with auto...")
             # 优先通过 auto 发现当前会话的 GCS 地址
             ray.init(address="auto", runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}})
+            print("[main_ppo] Connected to Ray cluster with auto.")
         except Exception as e:
             print(f"Failed to connect to Ray cluster with auto: {e}")
             # 回退到本地初始化（用于开发环境）
@@ -47,6 +50,7 @@ def run_ppo(config) -> None:
                 runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
                 num_cpus=config.ray_init.num_cpus,
             )
+            print("[main_ppo] Connected to Ray cluster with local initialization.")
 
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete
