@@ -38,20 +38,15 @@ def run_ppo(config) -> None:
     if not ray.is_initialized():
         # 连接到已预启动的本地 Ray 集群，避免嵌入式启动 runtime env agent 带来的不稳定
         try:
-            # 尝试连接到本地Ray集群，使用具体的地址
-            ray.init(address="127.0.0.1:10001", runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}})
+            # 优先通过 auto 发现当前会话的 GCS 地址
+            ray.init(address="auto", runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}})
         except Exception as e:
-            print(f"Failed to connect to Ray cluster: {e}")
-            try:
-                # 尝试auto连接
-                ray.init(address="auto", runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}})
-            except Exception as e2:
-                print(f"Failed to connect with auto: {e2}")
-                # 回退到本地初始化（用于开发环境）
-                ray.init(
-                    runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
-                    num_cpus=config.ray_init.num_cpus,
-                )
+            print(f"Failed to connect to Ray cluster with auto: {e}")
+            # 回退到本地初始化（用于开发环境）
+            ray.init(
+                runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
+                num_cpus=config.ray_init.num_cpus,
+            )
 
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete
