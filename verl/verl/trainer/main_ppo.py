@@ -36,14 +36,15 @@ def main(config):
 def run_ppo(config) -> None:
     # Check if Ray is not initialized
     if not ray.is_initialized():
-        # Initialize Ray with a local cluster configuration
-        # Set environment variables in the runtime environment to control tokenizer parallelism,
-        # NCCL debug level, VLLM logging level, and allow runtime LoRA updating
-        # `num_cpus` specifies the number of CPU cores Ray can use, obtained from the configuration
-        ray.init(
-            runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
-            num_cpus=config.ray_init.num_cpus,
-        )
+        # 连接到已预启动的本地 Ray 集群，避免嵌入式启动 runtime env agent 带来的不稳定
+        try:
+            ray.init(address="auto", runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}})
+        except Exception:
+            # 回退到本地初始化（用于开发环境）
+            ray.init(
+                runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
+                num_cpus=config.ray_init.num_cpus,
+            )
 
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete

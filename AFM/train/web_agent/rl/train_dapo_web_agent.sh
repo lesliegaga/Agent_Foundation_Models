@@ -76,6 +76,8 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 # =====================================================================================================================
 cd verl
 ray stop --force >/dev/null 2>&1 || true
+# 预启动本地 Ray head，以提升 runtime env agent 稳定性
+ray start --head --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=true \
