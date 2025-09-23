@@ -55,8 +55,8 @@ PRIMARY_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==
 fi
 if [ -n "$PRIMARY_IP" ]; then
 export RAY_NODE_IP_ADDRESS="$PRIMARY_IP"
+export RAY_DASHBOARD_HOST="$PRIMARY_IP"
 fi
-export RAY_DASHBOARD_HOST=0.0.0.0
 unset RAY_AGENT_PORT
 unset RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
