@@ -59,7 +59,7 @@ export RAY_DASHBOARD_HOST="127.0.0.1"
 unset RAY_AGENT_PORT
 unset RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
-VAL_DATASETS="" # "your val datasets"
+VAL_DATASETS="${TRAIN_DATASETS}" # "your val datasets"
 # =====================================================================================================================
 #                                      Tool
 # =====================================================================================================================
