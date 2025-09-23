@@ -48,6 +48,10 @@ export RAY_TMPDIR="/tmp/ray"
 mkdir -p "$RAY_TMPDIR" && chmod 777 "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
+# 避免大量预启动与高并发导致 worker 启动阻塞
+export RAY_NUM_PRESTART_WORKERS=0
+export RAY_MAXIMUM_STARTUP_CONCURRENCY=8
+export RAY_WORKER_REGISTER_TIMEOUT_SECONDS=120
 # 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
@@ -72,7 +76,7 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 cd verl
 ray stop --force >/dev/null 2>&1 || true
 # 预启动本地 Ray head，以提升 runtime env agent 稳定性
-ray start --head --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
+ray start --head --num-cpus=16 --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
 # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
