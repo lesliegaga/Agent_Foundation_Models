@@ -48,9 +48,15 @@ export RAY_TMPDIR="/tmp/ray"
 mkdir -p "$RAY_TMPDIR" && chmod 777 "$RAY_TMPDIR"
 export RAY_DEDUP_LOGS=0
 export RAY_BACKEND_LOG_LEVEL=debug
-# 让 Ray 自动检测并使用真实主机 IP，避免 runtime env agent 绑定到不可达地址
-unset RAY_NODE_IP_ADDRESS
-unset RAY_DASHBOARD_HOST
+# 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
+PRIMARY_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$PRIMARY_IP" ]; then
+PRIMARY_IP=$(ip route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')
+fi
+if [ -n "$PRIMARY_IP" ]; then
+export RAY_NODE_IP_ADDRESS="$PRIMARY_IP"
+fi
+export RAY_DASHBOARD_HOST=0.0.0.0
 unset RAY_AGENT_PORT
 unset RAY_RUNTIME_ENV_AGENT_STARTUP_TIMEOUT_MS
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-WebAgent-RL-Dataset_20250917181100/combined_data_0724.parquet"   # your train dataset
