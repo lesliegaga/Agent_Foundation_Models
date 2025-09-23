@@ -73,6 +73,22 @@ cd verl
 ray stop --force >/dev/null 2>&1 || true
 # 预启动本地 Ray head，以提升 runtime env agent 稳定性
 ray start --head --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
+# 解析当前 Ray 会话的 GCS 地址，传给 Python 端显式连接
+SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
+if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/ports_by_node.json" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
+    NODE_IP=$(cat "$SESSION_DIR/node_ip_address.json" 2>/dev/null | sed 's/"//g')
+    GCS_PORT=$(python3 - <<'PY'
+import json,sys,os
+p=os.environ.get('SESSION_DIR','')+"/ports_by_node.json"
+d=json.load(open(p))
+print(d.get('gcs',0))
+PY
+)
+    if [ -n "$NODE_IP" ] && [ -n "$GCS_PORT" ] && [ "$GCS_PORT" != "0" ]; then
+        export RAY_GCS_ADDRESS="$NODE_IP:$GCS_PORT"
+        echo "[train_sh] RAY_GCS_ADDRESS=$RAY_GCS_ADDRESS"
+    fi
+fi
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=true \
