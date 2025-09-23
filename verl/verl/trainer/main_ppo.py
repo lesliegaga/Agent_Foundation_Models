@@ -50,12 +50,18 @@ def run_ppo(config) -> None:
 
     # Create a remote instance of the TaskRunner class, and
     # Execute the `run` method of the TaskRunner instance remotely and wait for it to complete
+    print("[main_ppo] Creating TaskRunner actor...")
     if OmegaConf.select(config.trainer, "profile_steps") is not None and len(OmegaConf.select(config.trainer, "profile_steps")) > 0:
         nsight_options = OmegaConf.to_container(config.trainer.controller_nsight_options)
         runner = TaskRunner.options(runtime_env={"nsight": nsight_options}).remote()
     else:
         runner = TaskRunner.remote()
-    ray.get(runner.run.remote(config))
+    print("[main_ppo] Submitting TaskRunner.run ...")
+    try:
+        ray.get(runner.run.remote(config), timeout=300)
+    except Exception as e:
+        print(f"[main_ppo] TaskRunner.run timed out or failed: {e}")
+        raise
 
     # [Optional] get the path of the timeline trace file from the configuration, default to None
     # This file is used for performance analysis
@@ -74,15 +80,17 @@ class TaskRunner:
 
         from verl.utils.fs import copy_to_local
 
-        print(f"TaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
+        print(f"[TaskRunner] Hostname: {socket.gethostname()}, PID: {os.getpid()}")
 
         pprint(OmegaConf.to_container(config, resolve=True))
 
         OmegaConf.resolve(config)
 
+        print("[TaskRunner] Start: copy checkpoint and build tokenizer/processor...")
         # Download the checkpoint from HDFS to the local machine.
         # `use_shm` determines whether to use shared memory, which could lead to faster model loading if turned on
         local_path = copy_to_local(config.actor_rollout_ref.model.path, use_shm=config.actor_rollout_ref.model.get("use_shm", False))
+        print(f"[TaskRunner] Checkpoint local path: {local_path}")
 
         # Instantiate the tokenizer and processor.
         from verl.utils import hf_processor, hf_tokenizer
@@ -91,6 +99,7 @@ class TaskRunner:
         tokenizer = hf_tokenizer(local_path, trust_remote_code=trust_remote_code)
         # Used for multimodal LLM, could be None
         processor = hf_processor(local_path, trust_remote_code=trust_remote_code, use_fast=True)
+        print("[TaskRunner] Tokenizer/processor ready.")
 
         # Version validation for vllm.
         if config.actor_rollout_ref.rollout.name in ["vllm"]:
@@ -164,6 +173,7 @@ class TaskRunner:
         reward_fn = load_reward_manager(config, tokenizer, num_examine=0, is_valid=False, **config.reward_model.get("reward_kwargs", {}))
         val_reward_fn = load_reward_manager(config, tokenizer, num_examine=1, is_valid=True, **config.reward_model.get("reward_kwargs", {}))
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
+        print("[TaskRunner] Resource pool prepared.")
 
         from verl.utils.dataset.rl_dataset import collate_fn
 
@@ -173,6 +183,7 @@ class TaskRunner:
         train_sampler = create_rl_sampler(config.data, train_dataset)
 
         # Initialize the PPO trainer.
+        print("[TaskRunner] Construct RayPPOTrainer...")
         trainer = RayPPOTrainer(
             config=config,
             tokenizer=tokenizer,
@@ -189,9 +200,12 @@ class TaskRunner:
             device_name=config.trainer.device,
         )
         # Initialize the workers of the trainer.
+        print("[TaskRunner] init_workers() ...")
         trainer.init_workers()
         # Start the training process.
+        print("[TaskRunner] fit() ...")
         trainer.fit()
+        print("[TaskRunner] Training finished.")
 
 
 def create_rl_dataset(data_paths, data_config, tokenizer, processor):
