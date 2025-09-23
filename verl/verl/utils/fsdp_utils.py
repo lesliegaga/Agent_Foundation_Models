@@ -142,7 +142,8 @@ def offload_fsdp_model_to_cpu(model: FSDP, empty_cache: bool = True):
             continue
         flat_param = handle.flat_param
         assert flat_param.data.data_ptr() == flat_param._local_shard.data_ptr() and id(flat_param.data) != id(flat_param._local_shard) and flat_param.data.size() == flat_param._local_shard.size()
-        handle.flat_param_to(torch.device("cpu"), non_blocking=True)
+        # Use synchronous copy to avoid CUDA invalid argument in some environments
+        handle.flat_param_to(torch.device("cpu"), non_blocking=False)
         # the following still keeps id(._local_shard) != id(.data)
         flat_param._local_shard = flat_param.data
         assert id(flat_param._local_shard) != id(flat_param.data)
