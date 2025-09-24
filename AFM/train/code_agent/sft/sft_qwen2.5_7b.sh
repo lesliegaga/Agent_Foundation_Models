@@ -17,7 +17,7 @@ MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen2.5-Coder-7B-Instruct"
 export NNODES=1 # Nodes number for training
 NODE_RANK=${RANK:-0}
 export NODE_RANK
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+CUDA_VISIBLE_DEVICES=0,1,2,3
 export CUDA_VISIBLE_DEVICES
 
 # 解析脚本所在目录，构造 DeepSpeed 配置的绝对路径，避免多进程相对路径失效
