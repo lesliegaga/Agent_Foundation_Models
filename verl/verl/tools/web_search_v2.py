@@ -20,6 +20,8 @@ import json
 import logging
 import os
 import re
+import fcntl
+from contextlib import contextmanager
 from typing import Any, Dict, Optional, Tuple
 from uuid import uuid4
 
@@ -74,6 +76,24 @@ class SerperCacheAPITool(BaseTool):
 
         logger.info(f"Initialized SerperCacheAPITool with server: {self.serper_cache_url}")
     
+    @staticmethod
+    @contextmanager
+    def _interprocess_lock(lock_file_path: str):
+        """A simple cross-process file lock using fcntl.flock.
+
+        Blocks until the exclusive lock is acquired, then releases on exit.
+        """
+        # Ensure directory exists for custom paths; using /tmp doesn't require it
+        fd = os.open(lock_file_path, os.O_CREAT | os.O_RDWR)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            yield
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
+
     def _format_results_to_string(self, serper_json: Dict[str, Any], query: str = None) -> str:
         """Formats the Serper JSON result into a structured string."""
         if "organic" not in serper_json or not serper_json["organic"]:
@@ -207,20 +227,21 @@ class SerperCacheAPITool(BaseTool):
             logger.info(f"[SerperCacheAPITool] Searching for: {query}")
 
             # 调用服务器API
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.serper_cache_url,
-                    json=payload,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as response:
-                    
-                    if response.status != 200:
-                        error_msg = f"Server returned status {response.status}, fail to call {self.serper_cache_url}"
-                        logger.error(f"[SerperCacheAPITool] {error_msg}")
-                        return json.dumps({"error": error_msg}), 0.0, {"error": "server_error", "status": response.status}
+            lock_file = "/tmp/afm_serper_search.lock"
+            with self._interprocess_lock(lock_file):
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        self.serper_cache_url,
+                        json=payload,
+                        headers=headers,
+                        timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    ) as response:
+                        if response.status != 200:
+                            error_msg = f"Server returned status {response.status}, fail to call {self.serper_cache_url}"
+                            logger.error(f"[SerperCacheAPITool] {error_msg}")
+                            return json.dumps({"error": error_msg}), 0.0, {"error": "server_error", "status": response.status}
 
-                    result = await response.json()
+                        result = await response.json()
             
             # 格式化结果
             # breakpoint()
