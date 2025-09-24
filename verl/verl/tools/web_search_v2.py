@@ -79,18 +79,38 @@ class SerperCacheAPITool(BaseTool):
     @staticmethod
     @contextmanager
     def _interprocess_lock(lock_file_path: str):
-        """A simple cross-process file lock using fcntl.flock.
+        """A cross-process file lock using fcntl.flock with retry mechanism.
 
-        Blocks until the exclusive lock is acquired, then releases on exit.
+        Uses non-blocking lock with retries to avoid deadlock.
         """
-        # Ensure directory exists for custom paths; using /tmp doesn't require it
+        import time
+        
         fd = os.open(lock_file_path, os.O_CREAT | os.O_RDWR)
+        max_retries = 20
+        retry_interval = 0.1
+        
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            yield
+            # Try to acquire lock with retries
+            for attempt in range(max_retries):
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    # Lock acquired successfully
+                    yield
+                    return
+                except (OSError, IOError):
+                    # Lock is held by another process
+                    if attempt < max_retries - 1:
+                        time.sleep(retry_interval)
+                    else:
+                        # Final attempt failed, log warning but continue
+                        logger.warning(f"[SerperCacheAPITool] Failed to acquire lock after {max_retries} attempts, proceeding without lock")
+                        yield
+                        return
         finally:
             try:
                 fcntl.flock(fd, fcntl.LOCK_UN)
+            except (OSError, IOError):
+                pass  # Ignore unlock errors
             finally:
                 os.close(fd)
 
