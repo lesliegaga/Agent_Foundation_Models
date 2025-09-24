@@ -6,7 +6,7 @@
     "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-MHQA-Agent-SFT-Dataset"
   },
   "code_agent_sft": {
-    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM-CodeAgent-SFT-Dataset"
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/amap_search_rag_AFM-CodeAgent-SFT-Dataset_20250924164316/CodeAgentSFTDataset.json"
   },
   "identity": {
     "file_name": "identity.json"
