@@ -12,7 +12,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 echo "=== 训练开始时间: $(date) ==="
 echo "=== 日志文件: $LOG_FILE ==="
 
-MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen2.5-7B-Instruct"
+MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen2.5-Coder-7B-Instruct"
 
 export NNODES=1 # Nodes number for training
 NODE_RANK=${RANK:-0}
@@ -28,7 +28,8 @@ DS_CONFIG="$REPO_ROOT/LLaMA-Factory/examples/deepspeed/ds_z3_config.json"
 
 STAGE=sft
 finetuning_type=full
-OUTPUT_DIR="/mnt/tongyan.zjy/model_output/AFM/AFM-CodeAgent-7B-sft"
+# 基础输出目录，具体实验目录根据训练参数拼接
+OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/AFM-CodeAgent-7B-sft"
 LEARNING_RATE="3e-5"
 BATCH_SIZE=1
 GRADIENT_ACCUMULATION=4
@@ -45,6 +46,10 @@ TEMPALTE=qwen
 # Swanlab
 SWANLAB_API_KEY=ZjDMPe0DCAnwiVUndD5sB
 SWANLAB_PROJECT=code_agent_sft
+
+# 根据训练参数构造实验目录名，参考 web_agent 脚本风格
+EXPERIMENT_ID="exp_lr${LEARNING_RATE}_bs${BATCH_SIZE}_ga${GRADIENT_ACCUMULATION}_ep${EPOCHS}_cl${CUTOFF_LEN}_${PRECISION}"
+OUTPUT_DIR="${OUTPUT_DIR_BASE}/${EXPERIMENT_ID}"
 
 # train
 echo "Training start: $MODEL_PATH -> $OUTPUT_DIR"
