@@ -10,5 +10,5 @@
 
 
 from datasets import download_dataset
-download_dataset("amap_search_rag/AFM-WebAgent-SFT-Dataset",local_dir="./")
-download_dataset("amap_search_rag/AFM-WebAgent-RL-Dataset",local_dir="./")
+download_dataset("amap_search_rag/AFM-CodeAgent-SFT-Dataset",local_dir="./")
+download_dataset("amap_search_rag/AFM-CodeAgent-RL-Dataset",local_dir="./")
