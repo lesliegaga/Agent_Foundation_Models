@@ -49,8 +49,6 @@ export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
 # 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
-# export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
-# export RAY_ADDRESS="$RAY_GCS_ADDRESS"
 export RAY_DASHBOARD_HOST="127.0.0.1"
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
@@ -70,6 +68,8 @@ cd verl
 ray stop --force >/dev/null 2>&1 || true
 # # 预启动本地 Ray head，以提升 runtime env agent 稳定性
 ray start --head --num-cpus=16 --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
+export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
+export RAY_ADDRESS="$RAY_GCS_ADDRESS"
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 # SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 # if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
