@@ -30,14 +30,15 @@ use_dynamic_bsz=False
 # NOTE: We recommend to use wandb as log backend. Export your own wandb project and key to use it. Remember to turn on wandb_mode if you sync online.
 export WANDB_MODE="offline"
 CURRENT_DIR=$(pwd)
-export NNODES=8 # "your GPU group number"
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+export NNODES=1 # "your GPU group number"
 export PROJECT_NAME="agent_foundation_models"
 SAVE_MODEL_FOLDER="${CURRENT_DIR}/experiments"  # your save model folder
-export EXPERIMENT_NAME="DAPO-QWEN32B-CodeAgent"
-export BASE_MODEL="${CURRENT_DIR}/AFM/models/web_agent/AFM-CodeAgent-32B-sft"   # your train model path
+export EXPERIMENT_NAME="DAPO-QWEN7B-CodeAgent"
+export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/AFM-CodeAgent-7B-sft/exp_lr3e-5_bs1_ga4_ep2.0_cl32768_bf16"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
-TRAIN_DATASETS="${CURRENT_DIR}/AFM/data/web_agent/AFM-CodeAgent-RL-Dataset/CodeAgentRLDataset.parquet"   # your train dataset
-VAL_DATASETS="your val datasets"
+TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
+VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
 #                                      Tool
 # =====================================================================================================================
@@ -99,7 +100,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.val_only=false \
     trainer.val_before_train=true \
     trainer.default_hdfs_dir=null \
-    trainer.n_gpus_per_node=8 \
+    trainer.n_gpus_per_node=4 \
     trainer.nnodes=$NNODES \
     trainer.save_freq=5 \
     trainer.test_freq=10 \
