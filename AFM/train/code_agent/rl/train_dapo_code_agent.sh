@@ -37,6 +37,16 @@ SAVE_MODEL_FOLDER="${CURRENT_DIR}/experiments"  # your save model folder
 export EXPERIMENT_NAME="DAPO-QWEN7B-CodeAgent"
 export BASE_MODEL="/mnt/tongyan.zjy/model_output/AFM/AFM-CodeAgent-7B-sft/exp_lr3e-5_bs1_ga4_ep2.0_cl32768_bf16"   # your train model path
 export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has some issues
+# export RAY_NAMESPACE="${EXPERIMENT_NAME}"
+# unset RAY_MEMORY
+# unset RAY_OBJECT_STORE_MEMORY
+# export RAY_DISABLE_DASHBOARD=0
+# export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
+# export RAY_DEDUP_LOGS=0
+# 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
+# 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
+export RAY_NODE_IP_ADDRESS="127.0.0.1"
+# export RAY_DASHBOARD_HOST="127.0.0.1"
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -52,6 +62,35 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 #                                      Train
 # =====================================================================================================================
 cd verl
+# ray stop --force >/dev/null 2>&1 || true
+# # 预启动本地 Ray head，以提升 runtime env agent 稳定性
+# ray start --head --num-cpus=16 --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
+# # 解析当前 Ray 会话的 GCS 地址（固定 6379）
+# SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
+# if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
+#     export SESSION_DIR
+#     PY_IP=$(python3 - <<'PY'
+# import json, os
+# sd = os.environ.get('SESSION_DIR','')
+# ip = ''
+# try:
+#     with open(os.path.join(sd, 'node_ip_address.json')) as f:
+#         data = json.load(f)
+#         if isinstance(data, dict):
+#             ip = data.get('node_ip_address') or data.get('ip') or ''
+#         else:
+#             ip = str(data).strip('"')
+# except Exception:
+#     pass
+# print(ip)
+# PY
+# )
+#     if [ -n "$PY_IP" ]; then
+#         export RAY_GCS_ADDRESS="$PY_IP:6379"
+#         export RAY_ADDRESS="$RAY_GCS_ADDRESS"
+#         echo "[train_sh] RAY_GCS_ADDRESS=$RAY_GCS_ADDRESS"
+#     fi
+# fi
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=true \
