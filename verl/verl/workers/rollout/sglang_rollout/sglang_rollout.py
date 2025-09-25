@@ -824,10 +824,12 @@ class SGLangRollout(BaseRollout):
                             if tool_name == "web_search" or tool_name == "wiki_search": _req.web_search_history.append(query)
                             elif tool_name == "crawl_page": _req.crawl_page_history.append(query)
                             
+                            # Get tool kwargs, default to empty dict if tool not in tools_kwargs
+                            tool_kwargs = _req.tools_kwargs.get(tool_name, {}).get("execute_kwargs", {})
                             tasks_to_execute.append(
                                 self._tool_map[tool_name].execute(
                                     _req.request_id, tool_call.function.arguments,
-                                    **{**_req.tools_kwargs[tool_name].get("execute_kwargs", {}), '_messages_list_of_dic': _messages_list_of_dic},
+                                    **{**tool_kwargs, '_messages_list_of_dic': _messages_list_of_dic},
                                 )
                             )
 
