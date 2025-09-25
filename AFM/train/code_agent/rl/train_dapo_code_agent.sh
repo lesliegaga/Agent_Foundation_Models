@@ -45,8 +45,8 @@ export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has som
 # export RAY_DEDUP_LOGS=0
 # 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
-export RAY_NODE_IP_ADDRESS="127.0.0.1"
-export RAY_GCS_ADDRESS="127.0.0.1:6379"
+# export RAY_NODE_IP_ADDRESS="127.0.0.1"
+export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
 export RAY_ADDRESS="$RAY_GCS_ADDRESS"
 # export RAY_DASHBOARD_HOST="127.0.0.1"
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
