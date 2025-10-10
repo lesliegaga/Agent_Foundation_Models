@@ -44,8 +44,12 @@ export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has som
 export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
 export RAY_DEDUP_LOGS=0
 export RAY_NUM_PRESTART_WORKERS=0
-export RAY_MAXIMUM_STARTUP_CONCURRENCY=4
+export RAY_MAXIMUM_STARTUP_CONCURRENCY=2  # 减少并发worker数量，避免内存峰值
 export RAY_WORKER_REGISTER_TIMEOUT_SECONDS=300
+# Ray内存管理配置
+export RAY_memory_usage_threshold=0.98  # 提高内存阈值到98%
+export RAY_memory_monitor_refresh_ms=1000  # 1秒检查一次内存
+export RAY_object_spilling_threshold=0.8  # 80%时开始spill对象到磁盘
 # 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
@@ -157,7 +161,27 @@ fi
 
 # 检查可用内存和GPU状态
 echo "[train_sh] Checking system resources..."
-echo "[train_sh] Available memory: $(free -h | grep '^Mem:' | awk '{print $7}')"
+TOTAL_MEM_GB=$(free -g | grep '^Mem:' | awk '{print $2}')
+USED_MEM_GB=$(free -g | grep '^Mem:' | awk '{print $3}')
+AVAILABLE_MEM_GB=$(free -g | grep '^Mem:' | awk '{print $7}')
+MEM_USAGE_PERCENT=$((USED_MEM_GB * 100 / TOTAL_MEM_GB))
+
+echo "[train_sh] Memory Status:"
+echo "[train_sh]   Total: ${TOTAL_MEM_GB}GB"
+echo "[train_sh]   Used: ${USED_MEM_GB}GB (${MEM_USAGE_PERCENT}%)"
+echo "[train_sh]   Available: ${AVAILABLE_MEM_GB}GB"
+
+# 内存预检查：确保至少有120GB可用内存
+REQUIRED_MEM_GB=120
+if [ $AVAILABLE_MEM_GB -lt $REQUIRED_MEM_GB ]; then
+    echo "[train_sh] ⚠️  WARNING: Available memory (${AVAILABLE_MEM_GB}GB) < Required (${REQUIRED_MEM_GB}GB)"
+    echo "[train_sh] This may cause OOM during model initialization."
+fi
+
+if [ $MEM_USAGE_PERCENT -gt 85 ]; then
+    echo "[train_sh] 🚨 WARNING: Memory usage ${MEM_USAGE_PERCENT}% > 85%, high risk of OOM"
+fi
+
 echo "[train_sh] GPU status:"
 nvidia-smi --query-gpu=index,name,memory.total,memory.free,utilization.gpu --format=csv
 
@@ -302,7 +326,9 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=$PPO_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.actor.fsdp_config.param_offload=true \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=true \
+    actor_rollout_ref.actor.fsdp_config.offload_policy=true \
     actor_rollout_ref.actor.fsdp_config.timeout=10 \
+    actor_rollout_ref.actor.fsdp_config.limit_all_gathers=true \
     actor_rollout_ref.actor.checkpoint.save_contents="['model', 'optimizer', 'extra']" \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${actor_ppo_max_token_len} \
