@@ -24,6 +24,11 @@ from io import StringIO
 import re
 import shutil
 import ast
+import logging
+
+# Setup logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class NsjailSandbox:
@@ -39,6 +44,20 @@ class NsjailSandbox:
         self.nsjail_path = nsjail_path
         if not self.nsjail_path:
             raise ValueError("nsjail_path not set")
+        
+        logger.info(f"[NsjailSandbox] Initialized with nsjail_path: {self.nsjail_path}")
+        
+        # Check if nsjail exists and is executable
+        self.nsjail_available = False
+        if not os.path.exists(self.nsjail_path):
+            logger.error(f"[NsjailSandbox] nsjail executable not found: {self.nsjail_path}")
+            logger.warning(f"[NsjailSandbox] Will use fallback direct execution (UNSAFE for production)")
+        elif not os.access(self.nsjail_path, os.X_OK):
+            logger.error(f"[NsjailSandbox] nsjail is not executable: {self.nsjail_path}")
+            logger.warning(f"[NsjailSandbox] Will use fallback direct execution (UNSAFE for production)")
+        else:
+            logger.info(f"[NsjailSandbox] nsjail executable verified: {self.nsjail_path}")
+            self.nsjail_available = True
     
     def parse_code_blobs_stdin_answer(self, code_blob: str) -> tuple[bool,str,str]:
         """Parses the LLM's output to get any code blob inside. Will return the code directly if it's code."""
@@ -165,6 +184,60 @@ class NsjailSandbox:
         except Exception as e:
             print(f'[nsjail cleanup error] {e}')
     
+    def _run_direct_fallback(self, code_str):
+        """
+        Fallback method to run code directly without nsjail (UNSAFE - for debugging only)
+        """
+        logger.warning(f"[NsjailSandbox._run_direct_fallback] Using direct execution fallback")
+        
+        try:
+            # Create a temporary file for the code
+            temp_dir = tempfile.mkdtemp(prefix="direct_exec_")
+            code_path = os.path.join(temp_dir, "code.py")
+            
+            with open(code_path, 'w') as f:
+                f.write(code_str)
+            
+            # Execute directly with subprocess
+            result = subprocess.run(
+                [sys.executable, code_path],
+                capture_output=True,
+                text=True,
+                timeout=10,  # 10 second timeout for direct execution
+                cwd=temp_dir
+            )
+            
+            entry = {
+                "success": result.returncode == 0,
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr
+            }
+            
+        except subprocess.TimeoutExpired:
+            entry = {
+                "success": False,
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "Execution timed out after 10 seconds"
+            }
+        except Exception as e:
+            entry = {
+                "success": False,
+                "returncode": 1,
+                "stdout": "",
+                "stderr": f"Direct execution error: {str(e)}"
+            }
+        finally:
+            # Clean up temp directory
+            try:
+                shutil.rmtree(temp_dir)
+            except:
+                pass
+                
+        logger.info(f"[NsjailSandbox._run_direct_fallback] Direct execution completed with return code: {entry['returncode']}")
+        return entry
+
     def run_in_nsjail(self, code_str, has_input=False):
         """
         Safely execute Python code in nsjail
@@ -176,15 +249,32 @@ class NsjailSandbox:
         Returns:
             dict: A dictionary containing execution results, including success, returncode, stdout, stderr
         """
+        logger.info(f"[NsjailSandbox.run_in_nsjail] Starting code execution")
+        
+        # Use fallback if nsjail is not available
+        if not self.nsjail_available:
+            logger.warning(f"[NsjailSandbox.run_in_nsjail] nsjail not available, using direct fallback")
+            return {
+                "success": False,
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "nsjail not available"
+            }
+            # return self._run_direct_fallback(code_str)
+        
         python_path, ld_path = self.get_env_paths()
+        logger.info(f"[NsjailSandbox.run_in_nsjail] Environment paths - Python: {python_path}, LD: {ld_path}")
+        
         temp_dir = tempfile.mkdtemp(prefix="nsjail_")
         temp_work_dir = os.path.join(temp_dir, "workspace")
         os.makedirs(temp_work_dir, exist_ok=True)
+        logger.info(f"[NsjailSandbox.run_in_nsjail] Created temp directory: {temp_dir}")
         
         try:
             code_path = os.path.join(temp_dir, "code.py")
             with open(code_path, 'w') as f:
                 f.write(code_str)
+            logger.info(f"[NsjailSandbox.run_in_nsjail] Code written to: {code_path}")
             
             cmd = [
                 self.nsjail_path,
@@ -209,6 +299,7 @@ class NsjailSandbox:
             ]
             
             os.makedirs("/tmp/empty", exist_ok=True)
+            logger.info(f"[NsjailSandbox.run_in_nsjail] Executing command: {' '.join(cmd[:5])}... (truncated)")
             
             result = subprocess.run(
                 cmd,
@@ -216,6 +307,7 @@ class NsjailSandbox:
                 text=True,
                 timeout=7
             )
+            logger.info(f"[NsjailSandbox.run_in_nsjail] Command completed with return code: {result.returncode}")
             entry = {
                 "success": result.returncode == 0,
                 "returncode": result.returncode,
