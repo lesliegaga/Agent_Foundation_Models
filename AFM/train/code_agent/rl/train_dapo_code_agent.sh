@@ -50,6 +50,9 @@ export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
 export RAY_DASHBOARD_HOST="127.0.0.1"
+# 启用详细的Ray日志
+export RAY_LOG_TO_STDERR=1
+export RAY_BACKEND_LOG_LEVEL=debug
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -90,9 +93,33 @@ sleep 5
 echo "[train_sh] Checking Ray cluster status..."
 ray status || echo "[train_sh] Warning: Ray status check failed, but continuing..."
 
-export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
-export RAY_ADDRESS="$RAY_GCS_ADDRESS"
-echo "[train_sh] Ray cluster configured with GCS address: $RAY_GCS_ADDRESS"
+
+# 验证Ray连接
+echo "[train_sh] Verifying Ray connection..."
+python3 -c "
+import ray
+try:
+    ray.init(address='$RAY_ADDRESS', ignore_reinit_error=True)
+    print('[train_sh] Ray connection successful')
+    print(f'[train_sh] Ray cluster info: {ray.cluster_resources()}')
+    
+    # 检查现有的named actors
+    from ray.util.state import list_actors
+    actors = list_actors()
+    print(f'[train_sh] Current Ray actors: {len(actors)} total')
+    for actor in actors[:5]:  # 只显示前5个
+        print(f'[train_sh] Actor: {actor}')
+    
+    ray.shutdown()
+except Exception as e:
+    print(f'[train_sh] Ray connection failed: {e}')
+" || {
+    echo "[train_sh] Ray connection verification failed, stopping Ray and letting training code manage it"
+    ray stop --force >/dev/null 2>&1 || true
+    unset RAY_ADDRESS
+    unset RAY_GCS_ADDRESS
+    echo "[train_sh] Ray environment variables cleared, training will start its own Ray cluster"
+}
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 # SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 # if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
@@ -177,6 +204,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.total_training_steps="${STEPS}" \
     trainer.default_hdfs_dir=null \
     trainer.default_local_dir="${SAVE_MODEL_FOLDER}/${EXPERIMENT_NAME}" \
+    trainer.ray_wait_register_center_timeout=120 \
     actor_rollout_ref.rollout.multi_turn.enable=true \
     actor_rollout_ref.rollout.multi_turn.max_turns=8 \
     +actor_rollout_ref.rollout.multi_turn.format=qwen \
