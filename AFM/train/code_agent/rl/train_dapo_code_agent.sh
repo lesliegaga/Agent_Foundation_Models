@@ -93,6 +93,9 @@ sleep 5
 echo "[train_sh] Checking Ray cluster status..."
 ray status || echo "[train_sh] Warning: Ray status check failed, but continuing..."
 
+export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
+export RAY_ADDRESS="$RAY_GCS_ADDRESS"
+echo "[train_sh] Ray cluster configured with GCS address: $RAY_GCS_ADDRESS"
 
 # 验证Ray连接
 echo "[train_sh] Verifying Ray connection..."
