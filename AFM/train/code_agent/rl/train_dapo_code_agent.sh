@@ -51,8 +51,8 @@ export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
 export RAY_DASHBOARD_HOST="127.0.0.1"
 # 启用详细的Ray日志
-export RAY_LOG_TO_STDERR=1
-export RAY_BACKEND_LOG_LEVEL=debug
+# export RAY_LOG_TO_STDERR=1
+# export RAY_BACKEND_LOG_LEVEL=debug
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
