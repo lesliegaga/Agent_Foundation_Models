@@ -65,11 +65,34 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 #                                      Train
 # =====================================================================================================================
 cd verl
+# 强制清理所有Ray进程和资源
+echo "[train_sh] Cleaning up Ray resources..."
 ray stop --force >/dev/null 2>&1 || true
-# # 预启动本地 Ray head，以提升 runtime env agent 稳定性
+pkill -f ray:: >/dev/null 2>&1 || true
+pkill -f raylet >/dev/null 2>&1 || true
+sleep 2
+
+# 清理Ray临时目录
+if [ -d "$RAY_TMPDIR" ]; then
+    echo "[train_sh] Cleaning Ray temp directory: $RAY_TMPDIR"
+    rm -rf "$RAY_TMPDIR"/* 2>/dev/null || true
+fi
+
+# 预启动本地 Ray head，以提升 runtime env agent 稳定性
+echo "[train_sh] Starting Ray head node..."
 ray start --head --num-cpus=16 --temp-dir="$RAY_TMPDIR" --include-dashboard=true --dashboard-host="$RAY_DASHBOARD_HOST" ${RAY_NODE_IP_ADDRESS:+--node-ip-address="$RAY_NODE_IP_ADDRESS"} | cat
+
+# 等待Ray集群完全启动
+echo "[train_sh] Waiting for Ray cluster to be ready..."
+sleep 5
+
+# 检查Ray集群状态
+echo "[train_sh] Checking Ray cluster status..."
+ray status || echo "[train_sh] Warning: Ray status check failed, but continuing..."
+
 export RAY_GCS_ADDRESS="${SERVER_HOST}:6379"
 export RAY_ADDRESS="$RAY_GCS_ADDRESS"
+echo "[train_sh] Ray cluster configured with GCS address: $RAY_GCS_ADDRESS"
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 # SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 # if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
