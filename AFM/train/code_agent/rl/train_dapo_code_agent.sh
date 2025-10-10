@@ -42,10 +42,10 @@ export VLLM_ATTENTION_BACKEND=XFORMERS # vllm + qwen2-7b with flash_attn has som
 # unset RAY_OBJECT_STORE_MEMORY
 # export RAY_DISABLE_DASHBOARD=0
 export RAY_TMPDIR="/mnt/tongyan.zjy/tmp/ray"
-# export RAY_DEDUP_LOGS=0
-# export RAY_NUM_PRESTART_WORKERS=0
-# export RAY_MAXIMUM_STARTUP_CONCURRENCY=8
-# export RAY_WORKER_REGISTER_TIMEOUT_SECONDS=120
+export RAY_DEDUP_LOGS=0
+export RAY_NUM_PRESTART_WORKERS=0
+export RAY_MAXIMUM_STARTUP_CONCURRENCY=4
+export RAY_WORKER_REGISTER_TIMEOUT_SECONDS=300
 # 绑定到真实主机 IP，dashboard 监听 0.0.0.0，避免 agent 绑定不可达地址
 # 单机绑定回环地址，确保 raylet 与 agents 在相同地址通信，避免本机外网地址导致的拒连
 export RAY_NODE_IP_ADDRESS="127.0.0.1"
@@ -113,9 +113,20 @@ try:
     for actor in actors[:5]:  # 只显示前5个
         print(f'[train_sh] Actor: {actor}')
     
+    # 检查命名空间
+    import ray.util.state as state
+    namespaces = state.list_nodes()
+    print(f'[train_sh] Available namespaces: {len(namespaces)}')
+    
+    # 检查资源可用性
+    resources = ray.available_resources()
+    print(f'[train_sh] Available resources: {resources}')
+    
     ray.shutdown()
 except Exception as e:
     print(f'[train_sh] Ray connection failed: {e}')
+    import traceback
+    traceback.print_exc()
 " || {
     echo "[train_sh] Ray connection verification failed, stopping Ray and letting training code manage it"
     ray stop --force >/dev/null 2>&1 || true
@@ -123,6 +134,33 @@ except Exception as e:
     unset RAY_GCS_ADDRESS
     echo "[train_sh] Ray environment variables cleared, training will start its own Ray cluster"
 }
+
+# 检查模型路径和权限
+echo "[train_sh] Checking model path and permissions..."
+if [ -d "$BASE_MODEL" ]; then
+    echo "[train_sh] ✓ Base model directory exists: $BASE_MODEL"
+    echo "[train_sh] Model directory size: $(du -sh "$BASE_MODEL" 2>/dev/null || echo 'Unknown')"
+    ls -la "$BASE_MODEL" | head -10
+else
+    echo "[train_sh] ✗ ERROR: Base model directory not found: $BASE_MODEL"
+    exit 1
+fi
+
+# 检查可用内存和GPU状态
+echo "[train_sh] Checking system resources..."
+echo "[train_sh] Available memory: $(free -h | grep '^Mem:' | awk '{print $7}')"
+echo "[train_sh] GPU status:"
+nvidia-smi --query-gpu=index,name,memory.total,memory.free,utilization.gpu --format=csv
+
+# 检查训练数据集
+echo "[train_sh] Checking training dataset..."
+if [ -f "$TRAIN_DATASETS" ]; then
+    echo "[train_sh] ✓ Training dataset exists: $TRAIN_DATASETS"
+    echo "[train_sh] Dataset size: $(du -sh "$TRAIN_DATASETS" 2>/dev/null || echo 'Unknown')"
+else
+    echo "[train_sh] ✗ ERROR: Training dataset not found: $TRAIN_DATASETS"
+    exit 1
+fi
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 # SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 # if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
