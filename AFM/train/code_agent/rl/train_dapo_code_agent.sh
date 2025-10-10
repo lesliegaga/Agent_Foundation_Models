@@ -53,6 +53,13 @@ export RAY_DASHBOARD_HOST="127.0.0.1"
 # 启用详细的Ray日志
 # export RAY_LOG_TO_STDERR=1
 # export RAY_BACKEND_LOG_LEVEL=debug
+# PyTorch distributed timeout and debug settings
+export TORCH_DISTRIBUTED_INIT_TIMEOUT=600
+export NCCL_TIMEOUT=600
+export NCCL_SOCKET_TIMEOUT=600
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+export NCCL_DEBUG=INFO
+export NCCL_DEBUG_SUBSYS=ALL
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -68,6 +75,8 @@ AFM_CONFIG="${CURRENT_DIR}/verl/verl/tools/config/afm_tool_config/afm_tool_confi
 #                                      Train
 # =====================================================================================================================
 cd verl
+# 创建日志目录
+mkdir -p logs
 # 强制清理所有Ray进程和资源
 echo "[train_sh] Cleaning up Ray resources..."
 ray stop --force >/dev/null 2>&1 || true
@@ -161,6 +170,89 @@ else
     echo "[train_sh] ✗ ERROR: Training dataset not found: $TRAIN_DATASETS"
     exit 1
 fi
+
+# 创建worker初始化监控脚本
+echo "[train_sh] Creating worker initialization monitor..."
+cat > /tmp/monitor_workers.py << 'EOF'
+import time
+import subprocess
+import threading
+import os
+import signal
+
+def monitor_workers():
+    """监控worker进程的创建和状态"""
+    print(f"[{time.strftime('%H:%M:%S')}] Starting worker monitor...")
+    
+    while True:
+        try:
+            # 检查Python worker进程
+            result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)
+            python_procs = []
+            for line in result.stdout.split('\n'):
+                if 'python' in line and ('verl' in line or 'fsdp' in line or 'ActorRollout' in line):
+                    parts = line.split()
+                    if len(parts) >= 11:
+                        pid = parts[1]
+                        cmd = ' '.join(parts[10:])[:100]
+                        python_procs.append(f"PID:{pid} - {cmd}")
+            
+            print(f"[{time.strftime('%H:%M:%S')}] Worker processes: {len(python_procs)}")
+            for proc in python_procs:
+                print(f"  {proc}")
+            
+            # 检查Ray actors
+            try:
+                actors_result = subprocess.run(['python3', '-c', '''
+import ray
+try:
+    ray.init(address="33.93.148.4:6379", ignore_reinit_error=True)
+    from ray.util.state import list_actors
+    actors = list_actors()
+    print(f"Ray actors: {len(actors)}")
+    for actor in actors[:3]:
+        print(f"  {actor}")
+    from ray.util import list_named_actors
+    named = list_named_actors()
+    print(f"Named actors: {named}")
+    ray.shutdown()
+except Exception as e:
+    print(f"Ray check failed: {e}")
+'''], capture_output=True, text=True, timeout=10)
+                print(actors_result.stdout.strip())
+                if actors_result.stderr:
+                    print(f"Ray errors: {actors_result.stderr.strip()}")
+            except Exception as e:
+                print(f"Failed to check Ray actors: {e}")
+            
+            print("-" * 60)
+            time.sleep(15)
+            
+        except Exception as e:
+            print(f"Monitor error: {e}")
+            time.sleep(5)
+
+if __name__ == "__main__":
+    try:
+        monitor_workers()
+    except KeyboardInterrupt:
+        print("Worker monitor stopped")
+EOF
+
+# 启动worker监控（后台运行）
+echo "[train_sh] Starting worker monitor in background..."
+python3 /tmp/monitor_workers.py > logs/worker_monitor.log 2>&1 &
+MONITOR_PID=$!
+echo "[train_sh] Worker monitor started with PID: $MONITOR_PID"
+
+# 设置清理函数
+cleanup_monitor() {
+    if [ ! -z "$MONITOR_PID" ]; then
+        echo "[train_sh] Stopping worker monitor (PID: $MONITOR_PID)..."
+        kill $MONITOR_PID 2>/dev/null || true
+    fi
+}
+trap cleanup_monitor EXIT
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
 # SESSION_DIR=$(readlink -f "$RAY_TMPDIR/session_latest" 2>/dev/null || echo "")
 # if [ -n "$SESSION_DIR" ] && [ -f "$SESSION_DIR/node_ip_address.json" ]; then
@@ -210,6 +302,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=$PPO_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.actor.fsdp_config.param_offload=true \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=true \
+    actor_rollout_ref.actor.fsdp_config.timeout=10 \
     actor_rollout_ref.actor.checkpoint.save_contents="['model', 'optimizer', 'extra']" \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${actor_ppo_max_token_len} \
@@ -245,7 +338,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     trainer.total_training_steps="${STEPS}" \
     trainer.default_hdfs_dir=null \
     trainer.default_local_dir="${SAVE_MODEL_FOLDER}/${EXPERIMENT_NAME}" \
-    trainer.ray_wait_register_center_timeout=120 \
+    trainer.ray_wait_register_center_timeout=900 \
     actor_rollout_ref.rollout.multi_turn.enable=true \
     actor_rollout_ref.rollout.multi_turn.max_turns=8 \
     +actor_rollout_ref.rollout.multi_turn.format=qwen \
