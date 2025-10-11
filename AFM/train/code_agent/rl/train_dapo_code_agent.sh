@@ -328,7 +328,6 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=true \
     actor_rollout_ref.actor.fsdp_config.offload_policy=true \
     actor_rollout_ref.actor.fsdp_config.timeout=10 \
-    actor_rollout_ref.actor.fsdp_config.limit_all_gathers=true \
     actor_rollout_ref.actor.checkpoint.save_contents="['model', 'optimizer', 'extra']" \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=${actor_ppo_max_token_len} \
