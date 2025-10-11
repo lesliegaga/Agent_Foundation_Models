@@ -22,7 +22,7 @@ actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
 SP_SIZE=4
-GEN_TP=4
+GEN_TP=1  # 降低到单GPU，避免tensor parallel通信问题
 use_dynamic_bsz=False
 # =====================================================================================================================
 #                                      Env
