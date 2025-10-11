@@ -391,14 +391,12 @@ class SGLangRollout(BaseRollout):
             
             # 强制禁用CUDA图以解决CollectiveFingerPrint不匹配问题
             disable_cuda_graph = self.config.get("disable_cuda_graph", True)  # 默认禁用
-            enforce_eager = self.config.get("enforce_eager", True)  # 默认启用eager模式
             
             # 从环境变量检查是否强制禁用CUDA图
             if os.getenv("SGLANG_DISABLE_CUDA_GRAPH", "0") == "1" or os.getenv("VERL_DISABLE_CUDA_GRAPH", "0") == "1":
                 disable_cuda_graph = True
-                enforce_eager = True
                 
-            logger.info(f"SGLang CUDA Graph settings: disable_cuda_graph={disable_cuda_graph}, enforce_eager={enforce_eager}")
+            logger.info(f"SGLang CUDA Graph settings: disable_cuda_graph={disable_cuda_graph}")
             
             self._engine = AsyncEngine(
                 model_path=actor_module,
@@ -415,7 +413,6 @@ class SGLangRollout(BaseRollout):
                 trust_remote_code=trust_remote_code,
                 # 强制禁用CUDA图以解决CollectiveFingerPrint问题
                 disable_cuda_graph=disable_cuda_graph,
-                enforce_eager=enforce_eager,
                 # NOTE(linjunrong): add rank to prevent SGLang generate same port inside PortArgs.init_new
                 # when random.seed is being set during training
                 port=30000 + rank,
