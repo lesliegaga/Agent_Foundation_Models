@@ -5,9 +5,9 @@ ulimit -n 65535
 #                                      Param
 # =====================================================================================================================
 ACTOR_LR=1e-6
-TRAIN_BS=256
+TRAIN_BS=128  # 减少从256到128
 PPO_MINI_BS=32
-GEN_BS=256
+GEN_BS=128    # 减少从256到128
 EPOCHS=100
 STEPS=2000
 N=8
@@ -24,6 +24,9 @@ infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 SP_SIZE=4
 GEN_TP=4
 use_dynamic_bsz=False
+# CUDA graph optimization params
+CUDA_GRAPH_MAX_BS=16
+MEM_FRACTION_STATIC=0.7
 # =====================================================================================================================
 #                                      Env
 # =====================================================================================================================
@@ -64,6 +67,9 @@ export NCCL_SOCKET_TIMEOUT=600
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
+# SGLang specific debugging
+# export SGLANG_DEBUG=1
+# export SGLANG_CUDA_GRAPH_DEBUG=1
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -147,6 +153,37 @@ except Exception as e:
     unset RAY_GCS_ADDRESS
     echo "[train_sh] Ray environment variables cleared, training will start its own Ray cluster"
 }
+
+echo "[train_sh] ====== 开始SGLang兼容性检查 ======"
+# 检查SGLang和CUDA兼容性
+python3 -c "
+import torch
+import sglang
+print(f'[train_sh] PyTorch version: {torch.__version__}')
+print(f'[train_sh] CUDA available: {torch.cuda.is_available()}')
+print(f'[train_sh] CUDA device count: {torch.cuda.device_count()}')
+print(f'[train_sh] SGLang version: {sglang.__version__}')
+
+# 检查NCCL
+try:
+    import torch.distributed as dist
+    print(f'[train_sh] NCCL available: {dist.is_nccl_available()}')
+except Exception as e:
+    print(f'[train_sh] NCCL check failed: {e}')
+
+# 测试基本GPU操作
+try:
+    for i in range(torch.cuda.device_count()):
+        with torch.cuda.device(i):
+            x = torch.randn(10, 10).cuda()
+            y = x @ x.T
+            print(f'[train_sh] GPU {i} basic operations: OK')
+except Exception as e:
+    print(f'[train_sh] GPU operations test failed: {e}')
+    import traceback
+    traceback.print_exc()
+"
+echo "[train_sh] ====== SGLang兼容性检查完成 ======"
 
 # 检查模型路径和权限
 echo "[train_sh] Checking model path and permissions..."
@@ -303,6 +340,38 @@ trap cleanup_monitor EXIT
 #         echo "[train_sh] RAY_GCS_ADDRESS=$RAY_GCS_ADDRESS"
 #     fi
 # fi
+
+echo "[train_sh] ====== 开始训练主程序 ======"
+echo "[train_sh] 配置摘要:"
+echo "[train_sh]   GPU并行度: $GEN_TP"
+echo "[train_sh]   训练批量大小: $TRAIN_BS"
+echo "[train_sh]   生成批量大小: $GEN_BS"
+echo "[train_sh]   GPU内存利用率: 0.4"
+echo "[train_sh]   CUDA图最大批量: $CUDA_GRAPH_MAX_BS"
+echo "[train_sh]   内存分配比例: $MEM_FRACTION_STATIC"
+
+# # 设置fallback处理
+# trap 'handle_training_failure' ERR
+
+# handle_training_failure() {
+#     echo "[train_sh] ❌ 训练失败，检查是否为CUDA图问题..."
+    
+#     # 检查日志中是否包含CUDA图相关错误
+#     if grep -q "Capture CUDA graph failed" logs/$EXPERIMENT_NAME.log 2>/dev/null; then
+#         echo "[train_sh] 🔄 检测到CUDA图失败，尝试禁用CUDA图重新运行..."
+        
+#         # 添加禁用CUDA图的参数并重新运行
+#         echo "[train_sh] 正在添加 --disable-cuda-graph 参数..."
+#         export DISABLE_CUDA_GRAPH=true
+        
+#         # 这里可以添加重试逻辑，但为了避免无限循环，暂时只记录
+#         echo "[train_sh] 请手动添加以下参数重新运行："
+#         echo "    actor_rollout_ref.rollout.disable_cuda_graph=true \\"
+#     fi
+    
+#     echo "[train_sh] 训练失败，请检查日志: logs/$EXPERIMENT_NAME.log"
+#     exit 1
+# }
 PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     algorithm.filter_groups.enable=true \
@@ -340,7 +409,9 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
     actor_rollout_ref.rollout.name=sglang_async \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.4 \
+    actor_rollout_ref.rollout.mem_fraction_static=${MEM_FRACTION_STATIC} \
+    actor_rollout_ref.rollout.cuda_graph_max_bs=${CUDA_GRAPH_MAX_BS} \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
