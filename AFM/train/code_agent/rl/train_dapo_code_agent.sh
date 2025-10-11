@@ -64,12 +64,17 @@ export NCCL_SOCKET_TIMEOUT=600
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
-# 彻底禁用SGLang CUDA图和内存检查（解决CollectiveFingerPrint不匹配）
+# 彻底禁用SGLang CUDA图和内存检查（解决CollectiveFingerPrint不匹配） 
 export SGL_DISABLE_TP_MEMORY_INBALANCE_CHECK=true
 export SGLANG_DISABLE_CUDA_GRAPH=1
 export SGLANG_MEM_FRACTION_STATIC=0.6
 export TORCH_NCCL_AVOID_RECORD_STREAMS=1
 export NCCL_CUMEM_ENABLE=0
+# 强制禁用CUDA图的所有可能参数
+export CUDA_GRAPHS_ENABLED=0
+export DISABLE_CUDA_GRAPH=1
+export VLLM_DISABLE_CUDA_GRAPHS=1
+export SGLANG_ENABLE_CUDA_GRAPH=0
 # 强制顺序初始化
 export RAY_DISABLE_IMPORT_THREAD=1
 export RAY_SCHEDULER_SPREAD_THRESHOLD=0.0
@@ -78,6 +83,9 @@ export RAY_WORKER_STARTUP_TIMEOUT=600
 export CUDA_LAUNCH_BLOCKING=1
 export CUDA_DEVICE_MAX_CONNECTIONS=1
 export NCCL_ASYNC_ERROR_HANDLING=1
+# 强制SGLang使用eager模式
+export SGLANG_FORCE_EAGER=1
+export VERL_DISABLE_CUDA_GRAPH=1
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -283,40 +291,15 @@ python3 /tmp/monitor_workers.py > logs/worker_monitor.log 2>&1 &
 MONITOR_PID=$!
 echo "[train_sh] Worker monitor started with PID: $MONITOR_PID"
 
-# 添加同步初始化逻辑
-echo "[train_sh] Implementing sequential worker initialization to prevent collective mismatch..."
-cat > /tmp/init_sync.py << 'EOF'
-import time
-import torch
-import torch.distributed as dist
-import os
+# 添加环境变量验证和调试信息
+echo "[train_sh] Verifying environment variables for SGLang CUDA graph disable..."
+echo "[train_sh] SGLANG_DISABLE_CUDA_GRAPH=$SGLANG_DISABLE_CUDA_GRAPH"
+echo "[train_sh] DISABLE_CUDA_GRAPH=$DISABLE_CUDA_GRAPH"
+echo "[train_sh] SGLANG_FORCE_EAGER=$SGLANG_FORCE_EAGER"
+echo "[train_sh] VERL_DISABLE_CUDA_GRAPH=$VERL_DISABLE_CUDA_GRAPH"
 
-def ensure_sync_initialization():
-    """确保所有worker同步初始化，避免CollectiveFingerPrint不匹配"""
-    if 'LOCAL_RANK' in os.environ:
-        local_rank = int(os.environ['LOCAL_RANK'])
-        world_size = int(os.environ.get('WORLD_SIZE', '1'))
-        
-        print(f"[SYNC_INIT] Rank {local_rank} starting synchronized initialization...")
-        
-        # 设置CUDA设备
-        if torch.cuda.is_available():
-            torch.cuda.set_device(local_rank)
-            # 清理CUDA缓存
-            torch.cuda.empty_cache()
-            
-        # 等待所有进程就绪
-        time.sleep(local_rank * 2)  # 错开初始化时间
-        print(f"[SYNC_INIT] Rank {local_rank} synchronized initialization completed")
-    else:
-        print("[SYNC_INIT] Non-distributed mode, skipping synchronization")
-
-if __name__ == '__main__':
-    ensure_sync_initialization()
-EOF
-
-# 运行同步初始化
-python3 /tmp/init_sync.py
+# 删除原来的同步初始化逻辑，因为时机不对
+# 添加基于配置文件的方式确保CUDA图禁用
 
 # 设置清理函数
 cleanup_monitor() {
@@ -324,8 +307,6 @@ cleanup_monitor() {
         echo "[train_sh] Stopping worker monitor (PID: $MONITOR_PID)..."
         kill $MONITOR_PID 2>/dev/null || true
     fi
-    # 清理临时文件
-    rm -f /tmp/init_sync.py
 }
 trap cleanup_monitor EXIT
 # # 解析当前 Ray 会话的 GCS 地址（固定 6379）
@@ -391,10 +372,12 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
     actor_rollout_ref.rollout.name=sglang_async \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
     ++actor_rollout_ref.rollout.disable_cuda_graph=true \
-    ++actor_rollout_ref.rollout.mem_fraction_static=0.6 \
+    ++actor_rollout_ref.rollout.mem_fraction_static=0.5 \
     ++actor_rollout_ref.rollout.enforce_eager=true \
+    ++actor_rollout_ref.rollout.enable_cuda_graph=false \
+    ++actor_rollout_ref.rollout.disable_custom_all_reduce=true \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
