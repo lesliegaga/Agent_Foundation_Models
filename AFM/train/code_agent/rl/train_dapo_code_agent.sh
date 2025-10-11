@@ -64,6 +64,15 @@ export NCCL_SOCKET_TIMEOUT=600
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
+# # 增强NCCL稳定性
+# export NCCL_ASYNC_ERROR_HANDLING=1
+# export NCCL_TREE_THRESHOLD=0
+# export NCCL_IB_DISABLE=1
+# export NCCL_P2P_DISABLE=1
+# export NCCL_SHM_DISABLE=1
+# # CUDA同步设置
+# export CUDA_LAUNCH_BLOCKING=0
+# export CUDA_DEVICE_MAX_CONNECTIONS=1
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
 VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
 # =====================================================================================================================
@@ -340,7 +349,10 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
     actor_rollout_ref.rollout.name=sglang_async \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
+    +actor_rollout_ref.rollout.cuda_graph_max_bs=16 \
+    +actor_rollout_ref.rollout.mem_fraction_static=0.7 \
+    +actor_rollout_ref.rollout.disable_cuda_graph=false \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
