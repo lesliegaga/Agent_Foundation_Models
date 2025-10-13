@@ -280,7 +280,44 @@ class FSDPVLLMShardingManager(BaseShardingManager):
 
         patch_vllm_moe_model_weight_loader(model)
         device = get_device_id()  # used when fsdp2 set cpu_offload_policy
-        loaded_params = model.load_weights(((name, param.to(device, non_blocking=True).full_tensor() if isinstance(param, DTensor) else param) for name, param in updated_params.items()))
+        
+        # 单机多卡环境下的NCCL兼容性处理：避免使用allgather_into_tensor_coalesced
+        def process_dtensor_param(param):
+            if isinstance(param, DTensor):
+                try:
+                    # 使用手动all_gather替代full_tensor()，避免NCCL不支持的coalesced操作
+                    import torch.distributed as dist
+                    local_tensor = param.to_local().to(device, non_blocking=True)
+                    
+                    # 获取DTensor的placement信息来正确重构完整tensor
+                    placement = param.placements[0]  # 假设只有一个维度的sharding
+                    
+                    # 检查placement类型
+                    from torch.distributed.tensor.placement_types import Shard, Replicate
+                    if isinstance(placement, Shard):
+                        # 这是一个Shard placement，需要all_gather
+                        world_size = dist.get_world_size()
+                        gather_list = [torch.empty_like(local_tensor) for _ in range(world_size)]
+                        dist.all_gather(gather_list, local_tensor)
+                        # 沿着sharding维度连接
+                        full_tensor = torch.cat(gather_list, dim=placement.dim)
+                        logger.debug(f"DTensor manual all_gather: {param.shape} -> {full_tensor.shape}")
+                        return full_tensor
+                    elif isinstance(placement, Replicate):
+                        # 这是一个Replicate placement，直接返回local tensor
+                        logger.debug(f"DTensor replicate: {param.shape} -> {local_tensor.shape}")
+                        return local_tensor
+                    else:
+                        # 未知placement类型，尝试使用local tensor
+                        logger.warning(f"Unknown DTensor placement type: {type(placement)}, using local tensor")
+                        return local_tensor
+                except Exception as e:
+                    logger.error(f"Failed to process DTensor: {e}, falling back to local tensor")
+                    return param.to_local().to(device, non_blocking=True)
+            else:
+                return param.to(device, non_blocking=True)
+        
+        loaded_params = model.load_weights(((name, process_dtensor_param(param)) for name, param in updated_params.items()))
 
         self.base_sync_done = True
         logger.info(f"vLLM load weights, loaded_params: {len(loaded_params) if loaded_params else -1}")
