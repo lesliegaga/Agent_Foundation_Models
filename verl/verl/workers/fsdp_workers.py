@@ -429,7 +429,8 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
                 raise NotImplementedError("vllm_mode must be 'customized' or 'spmd'")
 
             log_gpu_memory_usage(f"After building {rollout_name} rollout", logger=logger)
-            full_params = torch.distributed.get_world_size() == 1
+            # 强制使用full_params避免DTensor产生，解决NCCL兼容性问题
+            full_params = True
             rollout_sharding_manager = FSDPVLLMShardingManager(
                 module=self.actor_module_fsdp,
                 inference_engine=rollout.inference_engine,
