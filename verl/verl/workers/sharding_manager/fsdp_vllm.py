@@ -170,7 +170,8 @@ class FSDPVLLMShardingManager(BaseShardingManager):
             log_gpu_memory_usage("After state_dict() in sharding manager memory", logger=logger)
 
             # Copy, not share memory
-            load_format = "hf" if self.full_params else "dtensor"
+            # 强制使用hf格式避免DTensor兼容性问题
+            load_format = "hf"
 
             if vllm_version in (
                 "0.5.4",
