@@ -89,6 +89,13 @@ export NCCL_PROTO=Simple
 export TORCH_NCCL_ENABLE_MONITORING=0
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=300
 export TORCH_NCCL_COORD_CHECK_TIMEOUT_SEC=300
+# 强制使用Gloo后端作为备选方案
+export TORCH_DISTRIBUTED_BACKEND=gloo
+export MASTER_ADDR=127.0.0.1
+export MASTER_PORT=29500
+# 禁用有问题的NCCL操作
+export TORCH_NCCL_BLOCKING_WAIT=1
+export NCCL_BLOCKING_WAIT=1
 # 强制SGLang使用eager模式
 export SGLANG_FORCE_EAGER=1
 export VERL_DISABLE_CUDA_GRAPH=1
@@ -377,11 +384,8 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.max_model_len=${actor_ppo_max_token_len} \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
-    actor_rollout_ref.rollout.name=sglang_async \
+    actor_rollout_ref.rollout.name=vllm_rollout \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.5 \
-    ++actor_rollout_ref.rollout.disable_cuda_graph=true \
-    ++actor_rollout_ref.rollout.mem_fraction_static=0.5 \
-    ++actor_rollout_ref.rollout.disable_custom_all_reduce=true \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
