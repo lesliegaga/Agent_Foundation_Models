@@ -108,12 +108,7 @@ class ActorRolloutRefWorker(Worker, WorkerProfilerExtension):
         if not torch.distributed.is_initialized():
             rank = int(os.environ.get("RANK", 0))
             world_size = int(os.environ.get("WORLD_SIZE", 1))
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = f"cpu:gloo,{get_device_name()}:{get_nccl_backend()}"
+            backend = f"cpu:gloo,{get_device_name()}:{get_nccl_backend()}"
             torch.distributed.init_process_group(backend=backend, rank=rank, timeout=timedelta(seconds=self.config.actor.fsdp_config.timeout*60), world_size=world_size)
             # timeout=60*45
         # build device mesh for FSDP
@@ -834,13 +829,7 @@ class CriticWorker(Worker, WorkerProfilerExtension):
         import torch.distributed
 
         if not torch.distributed.is_initialized():
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = get_nccl_backend()
-            torch.distributed.init_process_group(backend=backend)
+            torch.distributed.init_process_group(backend=get_nccl_backend())
         self.config = config
 
         # build device mesh for Ulysses Sequence Parallel
@@ -1184,13 +1173,7 @@ class RewardModelWorker(Worker, WorkerProfilerExtension):
         import torch.distributed
 
         if not torch.distributed.is_initialized():
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = get_nccl_backend()
-            torch.distributed.init_process_group(backend=backend)
+            torch.distributed.init_process_group(backend=get_nccl_backend())
         self.config = config
 
         # build device mesh for Ulysses Sequence Parallel

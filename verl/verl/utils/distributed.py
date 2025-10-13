@@ -23,12 +23,7 @@ from verl.utils.device import get_nccl_backend, get_torch_device
 def initialize_global_process_group(timeout_second=36000):
     from datetime import timedelta
 
-    # 强制使用Gloo后端解决NCCL兼容性问题
-    backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-    if backend_override == "gloo":
-        backend = "gloo"
-    else:
-        backend = get_nccl_backend()
+    backend = get_nccl_backend()
     
     torch.distributed.init_process_group(backend, timeout=timedelta(seconds=timeout_second))
     local_rank = int(os.environ["LOCAL_RANK"])

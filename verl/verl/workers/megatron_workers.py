@@ -90,12 +90,7 @@ class ActorRolloutRefWorker(MegatronWorker, WorkerProfilerExtension):
         # 3. and apply the following patch in ray==2.10, https://github.com/ray-project/ray/pull/44385
         if not torch.distributed.is_initialized():
             rank = int(os.environ["LOCAL_RANK"])
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = get_nccl_backend()
+            backend = get_nccl_backend()
             torch.distributed.init_process_group(backend=backend, timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)))
             get_torch_device().set_device(rank)
 
@@ -644,12 +639,7 @@ class CriticWorker(MegatronWorker, WorkerProfilerExtension):
         # 3. and apply the following patch in ray==2.10, https://github.com/ray-project/ray/pull/44385
         if not torch.distributed.is_initialized():
             rank = int(os.environ["LOCAL_RANK"])
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = get_nccl_backend()
+            backend = get_nccl_backend()
             torch.distributed.init_process_group(backend=backend, timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)))
             get_torch_device().set_device(rank)
 
@@ -867,12 +857,7 @@ class RewardModelWorker(MegatronWorker, WorkerProfilerExtension):
         # 3. and apply the following patch in ray==2.10, https://github.com/ray-project/ray/pull/44385
         if not torch.distributed.is_initialized():
             rank = int(os.environ["LOCAL_RANK"])
-            # 强制使用Gloo后端解决NCCL兼容性问题
-            backend_override = os.environ.get("TORCH_DISTRIBUTED_BACKEND", "")
-            if backend_override == "gloo":
-                backend = "gloo"
-            else:
-                backend = get_nccl_backend()
+            backend = get_nccl_backend()
             torch.distributed.init_process_group(backend=backend, timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)))
             get_torch_device().set_device(rank)
 

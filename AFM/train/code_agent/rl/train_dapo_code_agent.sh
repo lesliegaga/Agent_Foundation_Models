@@ -89,13 +89,17 @@ export NCCL_PROTO=Simple
 export TORCH_NCCL_ENABLE_MONITORING=0
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=300
 export TORCH_NCCL_COORD_CHECK_TIMEOUT_SEC=300
-# 强制使用Gloo后端作为备选方案
-export TORCH_DISTRIBUTED_BACKEND=gloo
+# 保持NCCL后端，但优化配置
 export MASTER_ADDR=127.0.0.1
 export MASTER_PORT=29500
+# 强制NCCL使用兼容模式
+export NCCL_ALGO=Tree
+export NCCL_PROTO=Simple
 # 禁用有问题的NCCL操作
 export TORCH_NCCL_BLOCKING_WAIT=1
 export NCCL_BLOCKING_WAIT=1
+# 优化PyTorch collective操作，避免使用不支持的coalesced操作
+export TORCH_NCCL_AVOID_RECORD_STREAMS=1
 # 强制SGLang使用eager模式
 export SGLANG_FORCE_EAGER=1
 export VERL_DISABLE_CUDA_GRAPH=1
