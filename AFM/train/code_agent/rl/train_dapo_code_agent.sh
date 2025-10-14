@@ -22,7 +22,7 @@ actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
 SP_SIZE=4
-GEN_TP=2  # 启用张量并行以分布式GPU内存压力
+GEN_TP=4  # 启用张量并行以分布式GPU内存压力
 use_dynamic_bsz=False
 # =====================================================================================================================
 #                                      Env
@@ -67,6 +67,9 @@ export NCCL_DEBUG_SUBSYS=ALL
 # 彻底禁用SGLang CUDA图和内存检查（解决CollectiveFingerPrint不匹配） 
 export SGL_DISABLE_TP_MEMORY_INBALANCE_CHECK=true
 export SGLANG_DISABLE_CUDA_GRAPH=1
+# 禁用性能统计同步以避免分布式通信瓶颈
+export VERL_DISABLE_TIMING_REDUCE=1
+export VERL_SKIP_PERFORMANCE_LOGGING=1
 export SGLANG_MEM_FRACTION_STATIC=0.6
 export TORCH_NCCL_AVOID_RECORD_STREAMS=1
 export NCCL_CUMEM_ENABLE=0
@@ -98,6 +101,12 @@ export NCCL_PROTO=Simple
 # 禁用有问题的NCCL操作
 export TORCH_NCCL_BLOCKING_WAIT=1
 export NCCL_BLOCKING_WAIT=1
+# 优化NCCL通信稳定性 - 针对4GPU拓扑
+export NCCL_BUFFSIZE=8388608  # 增加缓冲区大小到8MB
+export NCCL_P2P_DISABLE=0     # 启用GPU点对点通信
+export NCCL_SHM_DISABLE=0     # 启用共享内存通信
+export NCCL_NET_GDR_READ=1    # 启用GPU Direct RDMA读取
+export NCCL_CUMEM_ENABLE=0    # 禁用CUDA内存池以避免碎片化
 # 优化PyTorch collective操作，避免使用不支持的coalesced操作
 export TORCH_NCCL_AVOID_RECORD_STREAMS=1
 # 强制SGLang使用eager模式
