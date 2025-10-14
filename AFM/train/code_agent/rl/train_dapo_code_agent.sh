@@ -5,14 +5,14 @@ ulimit -n 65535
 #                                      Param
 # =====================================================================================================================
 ACTOR_LR=1e-6
-TRAIN_BS=256
+TRAIN_BS=128
 PPO_MINI_BS=32
-GEN_BS=256
+GEN_BS=128
 EPOCHS=100
 STEPS=2000
 N=8
 PPO_MICRO_BSZ_PER_GPU=2
-LOG_PROB_MICRO_BSZ_PER_GPU=16
+LOG_PROB_MICRO_BSZ_PER_GPU=8
 CLIP_RATIO_LOW=0.2
 CLIP_RATIO_HIGH=0.28
 # context window
@@ -22,7 +22,7 @@ actor_ppo_max_token_len=$((max_prompt_length + max_response_length))
 infer_ppo_max_token_len=$((max_prompt_length + max_response_length))
 # performance related param
 SP_SIZE=4
-GEN_TP=1  # 降低到单GPU，避免tensor parallel通信问题
+GEN_TP=2  # 启用张量并行以分布式GPU内存压力
 use_dynamic_bsz=False
 # =====================================================================================================================
 #                                      Env
@@ -234,8 +234,8 @@ else
     exit 1
 fi
 
-# 创建worker初始化监控脚本
-echo "[train_sh] Creating worker initialization monitor..."
+# 创建增强的worker和内存监控脚本
+echo "[train_sh] Creating enhanced worker and memory monitor..."
 cat > /tmp/monitor_workers.py << 'EOF'
 import time
 import subprocess
@@ -243,9 +243,28 @@ import threading
 import os
 import signal
 
+def monitor_gpu_memory():
+    """监控GPU内存使用"""
+    try:
+        result = subprocess.run(['nvidia-smi', '--query-gpu=index,memory.used,memory.total,utilization.gpu', 
+                               '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=5)
+        gpu_info = []
+        for line in result.stdout.strip().split('\n'):
+            if line.strip():
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) >= 4:
+                    gpu_id, mem_used, mem_total, gpu_util = parts[:4]
+                    mem_usage_pct = int(mem_used) * 100 // int(mem_total) if mem_total != '0' else 0
+                    gpu_info.append(f"GPU{gpu_id}: {mem_used}MB/{mem_total}MB ({mem_usage_pct}%) util:{gpu_util}%")
+                    if mem_usage_pct > 90:
+                        gpu_info.append(f"  ⚠️  HIGH GPU{gpu_id} MEMORY: {mem_usage_pct}%")
+        return gpu_info
+    except Exception as e:
+        return [f"GPU monitoring error: {e}"]
+
 def monitor_workers():
     """监控worker进程的创建和状态"""
-    print(f"[{time.strftime('%H:%M:%S')}] Starting worker monitor...")
+    print(f"[{time.strftime('%H:%M:%S')}] Starting enhanced worker monitor...")
     
     while True:
         try:
@@ -263,6 +282,12 @@ def monitor_workers():
             print(f"[{time.strftime('%H:%M:%S')}] Worker processes: {len(python_procs)}")
             for proc in python_procs:
                 print(f"  {proc}")
+            
+            # 添加GPU内存监控
+            gpu_info = monitor_gpu_memory()
+            print(f"GPU Memory Status:")
+            for info in gpu_info:
+                print(f"  {info}")
             
             # 检查Ray actors
             try:
@@ -373,9 +398,9 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.optim.lr_warmup_steps=10 \
     actor_rollout_ref.actor.ppo_mini_batch_size="${PPO_MINI_BS}" \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=$PPO_MICRO_BSZ_PER_GPU \
-    actor_rollout_ref.actor.fsdp_config.param_offload=false \
-    actor_rollout_ref.actor.fsdp_config.optimizer_offload=false \
-    actor_rollout_ref.actor.fsdp_config.offload_policy=false \
+    actor_rollout_ref.actor.fsdp_config.param_offload=true \
+    actor_rollout_ref.actor.fsdp_config.optimizer_offload=true \
+    actor_rollout_ref.actor.fsdp_config.offload_policy=true \
     actor_rollout_ref.actor.fsdp_config.timeout=10 \
     actor_rollout_ref.actor.checkpoint.save_contents="['model', 'optimizer', 'extra']" \
     actor_rollout_ref.actor.use_dynamic_bsz=${use_dynamic_bsz} \
@@ -389,14 +414,14 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$GEN_TP \
     actor_rollout_ref.rollout.name=vllm \
-    actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.85 \
     actor_rollout_ref.rollout.log_prob_use_dynamic_bsz=${use_dynamic_bsz} \
     actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     actor_rollout_ref.rollout.max_num_batched_tokens=$((max_prompt_length + max_response_length)) \
     actor_rollout_ref.rollout.n=$N \
     actor_rollout_ref.rollout.temperature=1.0 \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=$LOG_PROB_MICRO_BSZ_PER_GPU \
-    actor_rollout_ref.ref.fsdp_config.param_offload=false \
+    actor_rollout_ref.ref.fsdp_config.param_offload=true \
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=${infer_ppo_max_token_len} \
     trainer.logger=['wandb','tensorboard'] \
     trainer.val_only=false \
