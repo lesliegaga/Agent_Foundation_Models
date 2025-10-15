@@ -342,6 +342,60 @@ python3 /tmp/monitor_workers.py > logs/worker_monitor.log 2>&1 &
 MONITOR_PID=$!
 echo "[train_sh] Worker monitor started with PID: $MONITOR_PID"
 
+# 添加数据长度统计和诊断功能
+echo "[train_sh] === 数据集长度分析 ==="
+echo "[train_sh] 分析训练数据集中的序列长度分布..."
+python3 -c "
+import pandas as pd
+import numpy as np
+import os
+
+# 读取数据集
+dataset_path = "${TRAIN_DATASETS}"
+if os.path.exists(dataset_path):
+    try:
+        df = pd.read_parquet(dataset_path)
+        print(f"数据集总样本数: {len(df)}")
+        
+        # 分析序列长度
+        if "messages" in df.columns:
+            lengths = []
+            for idx, row in df.iterrows():
+                if idx >= 100:  # 只分析前100个样本以节省时间
+                    break
+                messages = row["messages"]
+                if isinstance(messages, list):
+                    total_length = sum(len(str(msg).split()) for msg in messages)
+                    lengths.append(total_length)
+            
+            if lengths:
+                lengths = np.array(lengths)
+                print(f"序列长度统计 (前100个样本):")
+                print(f"  最小长度: {lengths.min()}")
+                print(f"  最大长度: {lengths.max()}")
+                print(f"  平均长度: {lengths.mean():.1f}")
+                print(f"  中位数: {np.median(lengths):.1f}")
+                print(f"  95%分位数: {np.percentile(lengths, 95):.1f}")
+                
+                # 检查超长序列
+                max_config_length = ${max_prompt_length} + ${max_response_length}
+                overlong_count = np.sum(lengths > max_config_length)
+                print(f"  超过配置长度({max_config_length})的样本: {overlong_count}/{len(lengths)}")
+                
+                if overlong_count > 0:
+                    print(f"  ⚠️  发现超长序列，建议启用数据过滤")
+                else:
+                    print(f"  ✓ 所有样本长度都在配置范围内")
+            else:
+                print("无法分析序列长度")
+        else:
+            print("数据集中未找到messages列")
+    except Exception as e:
+        print(f"数据集分析失败: {e}")
+else:
+    print(f"数据集文件不存在: {dataset_path}")
+"
+
 # 添加环境变量验证和调试信息
 echo "[train_sh] Verifying environment variables for SGLang CUDA graph disable..."
 echo "[train_sh] SGLANG_DISABLE_CUDA_GRAPH=$SGLANG_DISABLE_CUDA_GRAPH"
@@ -398,7 +452,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     data.max_response_length=${max_response_length} \
     data.shuffle=true \
     data.return_raw_chat=true \
-    data.filter_overlong_prompts=False \
+    data.filter_overlong_prompts=True \
     actor_rollout_ref.model.path=$BASE_MODEL \
     actor_rollout_ref.model.enable_gradient_checkpointing=true \
     actor_rollout_ref.model.use_remove_padding=true \
