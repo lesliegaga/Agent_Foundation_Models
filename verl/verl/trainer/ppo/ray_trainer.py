@@ -1126,8 +1126,18 @@ class RayPPOTrainer:
             if self.config.trainer.get("val_only", False):
                 return
 
-        # add tqdm
-        progress_bar = tqdm(total=self.total_training_steps, initial=self.global_steps, desc="Training Progress")
+        # add tqdm: 绑定到stdout，便于日志采集；控制刷新频率，避免过多回车不换行
+        import sys as _sys
+        progress_bar = tqdm(
+            total=self.total_training_steps,
+            initial=self.global_steps,
+            desc="Training Progress",
+            file=_sys.stdout,
+            dynamic_ncols=True,
+            mininterval=0.5,
+            smoothing=0.1,
+            leave=True,
+        )
 
         # Log filter variables
         batch = None
@@ -1139,8 +1149,16 @@ class RayPPOTrainer:
         self.global_steps += 1
         last_val_metrics = None
 
+        num_batches_per_epoch = len(self.train_dataloader)
         for epoch in range(self.config.trainer.total_epochs):
-            for batch_dict in self.train_dataloader:
+            for batch_idx, batch_dict in enumerate(self.train_dataloader, start=1):
+                # batch开始日志（带换行，便于写入文件与tail可见）
+                try:
+                    start_msg = f"[tqdm] epoch={epoch} batch_start={batch_idx}/{num_batches_per_epoch} global_step={self.global_steps}"
+                    progress_bar.write(start_msg)
+                    self._log_to_file(start_msg)
+                except Exception:
+                    pass
                 do_profile = self.global_steps in self.config.trainer.profile_steps if self.config.trainer.profile_steps is not None else False
                 if do_profile:
                     self.actor_rollout_wg.start_profile()
@@ -1525,7 +1543,22 @@ class RayPPOTrainer:
                 # TODO: make a canonical logger that supports various backend
                 logger.log(data=metrics, step=self.global_steps)
 
-                progress_bar.update(1)
+                # 每个batch结束日志
+                try:
+                    total = progress_bar.total or 1
+                    n = progress_bar.n or 0
+                    pct = n / total
+                    elapsed = progress_bar.format_dict.get("elapsed", 0.0) if hasattr(progress_bar, "format_dict") else 0.0
+                    rate = progress_bar.format_dict.get("rate", 0.0) if hasattr(progress_bar, "format_dict") else 0.0
+                    end_msg = (
+                        f"[tqdm] epoch={epoch} batch_end={batch_idx}/{num_batches_per_epoch} "
+                        f"global_step={self.global_steps} progress={n}/{total} ({pct:.1%}) "
+                        f"elapsed={elapsed:.1f}s rate={rate:.2f}/s"
+                    )
+                    progress_bar.write(end_msg)
+                    self._log_to_file(end_msg)
+                except Exception:
+                    pass
                 self.global_steps += 1
 
                 if do_profile:
