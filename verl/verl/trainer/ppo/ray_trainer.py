@@ -1108,6 +1108,9 @@ class RayPPOTrainer:
             config=OmegaConf.to_container(self.config, resolve=True),
         )
 
+        # 添加文件日志记录器
+        self._setup_file_logging()
+
         self.global_steps = 0
 
         # load checkpoint before doing anything
@@ -1569,33 +1572,41 @@ class RayPPOTrainer:
             gpu_memory_info = self._get_gpu_memory_info()
             
             # 每步都输出基本状态
-            print(f"[Step {step}] Epoch: {epoch}, Actor Loss: {actor_loss:.6f}, Reward Mean: {reward_mean:.4f}, LR: {lr:.8f}")
+            step_msg = f"[Step {step}] Epoch: {epoch}, Actor Loss: {actor_loss:.6f}, Reward Mean: {reward_mean:.4f}, LR: {lr:.8f}"
+            print(step_msg)
+            self._log_to_file(step_msg)
             
             # 每10步输出详细状态
             if step % 10 == 0:
-                print(f"\n=== Training Status at Step {step} ===")
-                print(f"  Epoch: {epoch}")
-                print(f"  Actor Loss: {actor_loss:.6f}")
+                detail_msg = f"\n=== Training Status at Step {step} ===\n" \
+                           f"  Epoch: {epoch}\n" \
+                           f"  Actor Loss: {actor_loss:.6f}\n"
                 if critic_loss > 0:
-                    print(f"  Critic Loss: {critic_loss:.6f}")
+                    detail_msg += f"  Critic Loss: {critic_loss:.6f}\n"
                 if kl_loss > 0:
-                    print(f"  KL Loss: {kl_loss:.6f}")
-                print(f"  Reward Stats: mean={reward_mean:.4f}, std={reward_std:.4f}, max={reward_max:.4f}, min={reward_min:.4f}")
-                print(f"  Learning Rate: {lr:.8f}")
-                print(f"  Timing: step={step_time:.2f}s, gen={gen_time:.2f}s, reward={reward_time:.2f}s")
+                    detail_msg += f"  KL Loss: {kl_loss:.6f}\n"
+                detail_msg += f"  Reward Stats: mean={reward_mean:.4f}, std={reward_std:.4f}, max={reward_max:.4f}, min={reward_min:.4f}\n" \
+                             f"  Learning Rate: {lr:.8f}\n" \
+                             f"  Timing: step={step_time:.2f}s, gen={gen_time:.2f}s, reward={reward_time:.2f}s\n"
                 if gpu_memory_info:
-                    print(f"  GPU Memory: {gpu_memory_info}")
-                print("=" * 50)
+                    detail_msg += f"  GPU Memory: {gpu_memory_info}\n"
+                detail_msg += "=" * 50
+                
+                print(detail_msg)
+                self._log_to_file(detail_msg)
             
             # 每50步输出完整指标
             if step % 50 == 0:
-                print(f"\n=== Complete Metrics at Step {step} ===")
+                complete_msg = f"\n=== Complete Metrics at Step {step} ===\n"
                 for key, value in sorted(metrics.items()):
                     if isinstance(value, (int, float)):
-                        print(f"  {key}: {value:.6f}")
+                        complete_msg += f"  {key}: {value:.6f}\n"
                     else:
-                        print(f"  {key}: {value}")
-                print("=" * 50)
+                        complete_msg += f"  {key}: {value}\n"
+                complete_msg += "=" * 50
+                
+                print(complete_msg)
+                self._log_to_file(complete_msg)
                 
         except Exception as e:
             print(f"[ERROR] Failed to log training status: {e}")
@@ -1714,3 +1725,60 @@ class RayPPOTrainer:
             
         except Exception as e:
             print(f"[ERROR] Failed to log reward computation: {e}")
+    
+    def _setup_file_logging(self):
+        """设置文件日志记录器，确保训练日志被正确保存"""
+        import logging
+        import os
+        from datetime import datetime
+        
+        # 创建logs目录
+        log_dir = "logs"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # 创建训练日志文件
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_file = os.path.join(log_dir, f"{self.config.trainer.experiment_name}_training_{timestamp}.log")
+        
+        # 配置日志记录器
+        self.file_logger = logging.getLogger('training_file_logger')
+        self.file_logger.setLevel(logging.INFO)
+        
+        # 清除现有的处理器
+        self.file_logger.handlers.clear()
+        
+        # 创建文件处理器
+        file_handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
+        file_handler.setLevel(logging.INFO)
+        
+        # 创建控制台处理器
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        
+        # 创建格式器
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+        
+        # 添加处理器到日志记录器
+        self.file_logger.addHandler(file_handler)
+        self.file_logger.addHandler(console_handler)
+        
+        # 防止日志传播到根日志记录器
+        self.file_logger.propagate = False
+        
+        print(f"[TRAINING] File logging setup complete. Log file: {log_file}")
+        self.file_logger.info(f"Training started - Experiment: {self.config.trainer.experiment_name}")
+        self.file_logger.info(f"Configuration: {self.config}")
+    
+    def _log_to_file(self, message, level='info'):
+        """记录消息到文件日志"""
+        if hasattr(self, 'file_logger'):
+            if level == 'info':
+                self.file_logger.info(message)
+            elif level == 'warning':
+                self.file_logger.warning(message)
+            elif level == 'error':
+                self.file_logger.error(message)
+            else:
+                self.file_logger.info(message)

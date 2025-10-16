@@ -514,4 +514,4 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.multi_turn.use_xml_tool_parser=true \
     actor_rollout_ref.rollout.multi_turn.tool_config_path="$CODE_CONFIG" \
     reward_model.reward_manager="afm" \
-    2>&1 | tee logs/$EXPERIMENT_NAME.log
+    > logs/$EXPERIMENT_NAME.log 2>&1 
