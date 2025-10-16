@@ -127,6 +127,10 @@ def call_sandbox_api(sandbox_fusion_url: str, code: str, stdin: str, compile_tim
 
 def _process_single_case(case_index: int, stdin_data: Any, expected_output: Any, sandbox_fusion_url: str, generation: str, timeout: int, language: str, concurrent_semaphore: Optional[threading.Semaphore] = None, fn_name: Optional[str] = None) -> Tuple[int, Dict[str, Any]]:
     """Helper function to process a single test case."""
+    # 设置递归深度限制防止栈溢出
+    import sys
+    sys.setrecursionlimit(1000)
+    
     api_response = None
     error_msg = None
     logger.info(f"Processing test case {case_index + 1}.")

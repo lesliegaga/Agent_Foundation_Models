@@ -534,7 +534,8 @@ def call_method(method, inputs):
 
     inputs_line_iterator = iter(inputs.split("\n"))
 
-    # sys.setrecursionlimit(10000)
+    # 限制递归深度防止栈溢出
+    sys.setrecursionlimit(1000)
 
     # @patch('builtins.input', side_effect=inputs.split("\n"))
     @patch("builtins.open", mock_open(read_data=inputs))

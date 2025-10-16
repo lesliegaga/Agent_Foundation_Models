@@ -899,6 +899,9 @@ class RayPPOTrainer:
                     pfx = f"{metric_sec}/{data_source}/{var_name}/{metric_name}"
                     metric_dict[pfx] = metric_val
 
+        # 添加详细的验证日志
+        self._log_validation_results(metric_dict, sample_scores, sample_inputs, sample_outputs)
+
         return metric_dict
 
     def init_workers(self):
@@ -1282,6 +1285,9 @@ class RayPPOTrainer:
                             new_batch.batch["token_level_rewards"] = new_batch.batch["token_level_scores"]
                         else:
                             new_batch.batch["token_level_rewards"] = new_batch.batch["token_level_scores"]
+                        
+                        # 添加reward计算日志
+                        self._log_reward_computation(reward_tensor, reward_extra_infos_dict)
 
                     if self.config.actor_rollout_ref.rollout.n == 1:
                         batch = new_batch
@@ -1501,6 +1507,9 @@ class RayPPOTrainer:
                 n_gpus = self.resource_pool_manager.get_n_gpus()
                 metrics.update(compute_throughout_metrics(batch=batch, timing_raw=timing_raw, n_gpus=n_gpus))
 
+                # 添加详细的训练状态日志
+                self._log_training_status(metrics, timing_raw, batch)
+
                 timing_raw = {} # reset time log
 
                 batch = None
@@ -1529,3 +1538,179 @@ class RayPPOTrainer:
                     pprint(f"Final validation metrics: {last_val_metrics}")
                     progress_bar.close()
                     return
+
+    def _log_training_status(self, metrics, timing_raw, batch):
+        """记录详细的训练状态信息"""
+        try:
+            # 提取关键训练指标
+            step = metrics.get("training/global_step", 0)
+            epoch = metrics.get("training/epoch", 0)
+            
+            # 提取loss相关指标
+            actor_loss = metrics.get("actor/loss", 0.0)
+            critic_loss = metrics.get("critic/loss", 0.0)
+            kl_loss = metrics.get("actor/kl_loss", 0.0)
+            
+            # 提取reward相关指标
+            reward_mean = metrics.get("data/reward_mean", 0.0)
+            reward_std = metrics.get("data/reward_std", 0.0)
+            reward_max = metrics.get("data/reward_max", 0.0)
+            reward_min = metrics.get("data/reward_min", 0.0)
+            
+            # 提取学习率
+            lr = metrics.get("actor/lr", 0.0)
+            
+            # 提取timing信息
+            step_time = timing_raw.get("step", 0.0)
+            gen_time = timing_raw.get("gen", 0.0)
+            reward_time = timing_raw.get("reward", 0.0)
+            
+            # 提取GPU内存信息（如果可用）
+            gpu_memory_info = self._get_gpu_memory_info()
+            
+            # 每步都输出基本状态
+            print(f"[Step {step}] Epoch: {epoch}, Actor Loss: {actor_loss:.6f}, Reward Mean: {reward_mean:.4f}, LR: {lr:.8f}")
+            
+            # 每10步输出详细状态
+            if step % 10 == 0:
+                print(f"\n=== Training Status at Step {step} ===")
+                print(f"  Epoch: {epoch}")
+                print(f"  Actor Loss: {actor_loss:.6f}")
+                if critic_loss > 0:
+                    print(f"  Critic Loss: {critic_loss:.6f}")
+                if kl_loss > 0:
+                    print(f"  KL Loss: {kl_loss:.6f}")
+                print(f"  Reward Stats: mean={reward_mean:.4f}, std={reward_std:.4f}, max={reward_max:.4f}, min={reward_min:.4f}")
+                print(f"  Learning Rate: {lr:.8f}")
+                print(f"  Timing: step={step_time:.2f}s, gen={gen_time:.2f}s, reward={reward_time:.2f}s")
+                if gpu_memory_info:
+                    print(f"  GPU Memory: {gpu_memory_info}")
+                print("=" * 50)
+            
+            # 每50步输出完整指标
+            if step % 50 == 0:
+                print(f"\n=== Complete Metrics at Step {step} ===")
+                for key, value in sorted(metrics.items()):
+                    if isinstance(value, (int, float)):
+                        print(f"  {key}: {value:.6f}")
+                    else:
+                        print(f"  {key}: {value}")
+                print("=" * 50)
+                
+        except Exception as e:
+            print(f"[ERROR] Failed to log training status: {e}")
+    
+    def _get_gpu_memory_info(self):
+        """获取GPU内存使用信息"""
+        try:
+            import subprocess
+            result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used,memory.total,utilization.gpu', 
+                                   '--format=csv,noheader,nounits'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                gpu_info = []
+                for line in result.stdout.strip().split('\n'):
+                    if line.strip():
+                        parts = [p.strip() for p in line.split(',')]
+                        if len(parts) >= 3:
+                            mem_used, mem_total, gpu_util = parts[:3]
+                            mem_usage_pct = int(mem_used) * 100 // int(mem_total) if mem_total != '0' else 0
+                            gpu_info.append(f"GPU: {mem_used}MB/{mem_total}MB ({mem_usage_pct}%) util:{gpu_util}%")
+                return ", ".join(gpu_info)
+        except Exception as e:
+            pass
+        return None
+    
+    def _log_validation_results(self, metric_dict, sample_scores, sample_inputs, sample_outputs):
+        """记录详细的验证结果"""
+        try:
+            step = self.global_steps
+            
+            print(f"\n=== Validation Results at Step {step} ===")
+            
+            # 计算基本统计信息
+            if sample_scores:
+                score_mean = sum(sample_scores) / len(sample_scores)
+                score_std = (sum((x - score_mean) ** 2 for x in sample_scores) / len(sample_scores)) ** 0.5
+                score_max = max(sample_scores)
+                score_min = min(sample_scores)
+                
+                print(f"  Validation Samples: {len(sample_scores)}")
+                print(f"  Score Stats: mean={score_mean:.4f}, std={score_std:.4f}, max={score_max:.4f}, min={score_min:.4f}")
+            
+            # 显示核心验证指标
+            core_metrics = {k: v for k, v in metric_dict.items() if k.startswith("val-core")}
+            if core_metrics:
+                print(f"  Core Validation Metrics:")
+                for metric_name, metric_value in core_metrics.items():
+                    print(f"    {metric_name}: {metric_value:.6f}")
+            
+            # 显示辅助验证指标（每10步显示一次）
+            if step % 10 == 0:
+                aux_metrics = {k: v for k, v in metric_dict.items() if k.startswith("val-aux")}
+                if aux_metrics:
+                    print(f"  Auxiliary Validation Metrics:")
+                    for metric_name, metric_value in aux_metrics.items():
+                        print(f"    {metric_name}: {metric_value:.6f}")
+            
+            # 显示样本示例（每50步显示一次）
+            if step % 50 == 0 and sample_inputs and sample_outputs:
+                print(f"  Sample Examples:")
+                for i in range(min(3, len(sample_inputs))):
+                    print(f"    Example {i+1}:")
+                    print(f"      Input: {sample_inputs[i][:200]}...")
+                    print(f"      Output: {sample_outputs[i][:200]}...")
+                    if i < len(sample_scores):
+                        print(f"      Score: {sample_scores[i]:.4f}")
+            
+            print("=" * 50)
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to log validation results: {e}")
+    
+    def _log_reward_computation(self, reward_tensor, reward_extra_infos_dict):
+        """记录reward计算过程的详细信息"""
+        try:
+            step = self.global_steps
+            
+            # 计算reward统计信息
+            if reward_tensor is not None:
+                reward_sum = reward_tensor.sum(dim=-1)  # 每个序列的总reward
+                reward_mean = reward_sum.mean().item()
+                reward_std = reward_sum.std().item()
+                reward_max = reward_sum.max().item()
+                reward_min = reward_sum.min().item()
+                
+                # 每20步输出reward计算信息
+                if step % 20 == 0:
+                    print(f"\n=== Reward Computation at Step {step} ===")
+                    print(f"  Reward Stats: mean={reward_mean:.4f}, std={reward_std:.4f}, max={reward_max:.4f}, min={reward_min:.4f}")
+                    print(f"  Reward Tensor Shape: {reward_tensor.shape}")
+                    
+                    # 显示reward分布
+                    if reward_sum.numel() > 0:
+                        positive_rewards = (reward_sum > 0).sum().item()
+                        zero_rewards = (reward_sum == 0).sum().item()
+                        negative_rewards = (reward_sum < 0).sum().item()
+                        total_rewards = reward_sum.numel()
+                        
+                        print(f"  Reward Distribution:")
+                        print(f"    Positive: {positive_rewards}/{total_rewards} ({positive_rewards/total_rewards*100:.1f}%)")
+                        print(f"    Zero: {zero_rewards}/{total_rewards} ({zero_rewards/total_rewards*100:.1f}%)")
+                        print(f"    Negative: {negative_rewards}/{total_rewards} ({negative_rewards/total_rewards*100:.1f}%)")
+                    
+                    # 显示额外的reward信息
+                    if reward_extra_infos_dict:
+                        print(f"  Extra Reward Info:")
+                        for key, value in reward_extra_infos_dict.items():
+                            if isinstance(value, list) and len(value) > 0:
+                                if isinstance(value[0], (int, float)):
+                                    value_mean = sum(value) / len(value)
+                                    print(f"    {key}: mean={value_mean:.4f}, count={len(value)}")
+                                else:
+                                    print(f"    {key}: {len(value)} items")
+                    
+                    print("=" * 50)
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to log reward computation: {e}")
