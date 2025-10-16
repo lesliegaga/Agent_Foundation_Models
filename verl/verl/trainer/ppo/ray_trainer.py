@@ -1122,6 +1122,11 @@ class RayPPOTrainer:
             val_metrics = self._validate()
             assert val_metrics, f"{val_metrics=}"
             pprint(f"Initial validation metrics: {val_metrics}")
+            # 同步写入文件日志，避免Ray Actor的stdout不被主进程捕获
+            try:
+                self._log_to_file(f"Initial validation metrics: {val_metrics}")
+            except Exception:
+                pass
             logger.log(data=val_metrics, step=self.global_steps)
             if self.config.trainer.get("val_only", False):
                 return
