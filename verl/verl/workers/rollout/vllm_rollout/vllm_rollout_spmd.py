@@ -315,6 +315,25 @@ class vLLMRollout(BaseRollout):
                 # NOTE(linjunrong): for multi-turn https://github.com/volcengine/verl/pull/1037
                 if "tools_kwargs" in non_tensor_batch.keys():
                     non_tensor_batch["tools_kwargs"] = _repeat_interleave(non_tensor_batch["tools_kwargs"], self.sampling_params.n)
+                # Repeat other non-tensor fields to align with expanded batch size (e.g., raw_prompt, data_source, index, etc.)
+                for k, v in list(non_tensor_batch.items()):
+                    if k in ("tools_kwargs",):
+                        continue
+                    try:
+                        if isinstance(v, np.ndarray):
+                            # Only repeat along batch dimension if shapes align
+                            if v.shape[0] == batch_size // self.sampling_params.n:
+                                non_tensor_batch[k] = np.repeat(v, self.sampling_params.n, axis=0)
+                        elif isinstance(v, torch.Tensor):
+                            if v.size(0) == batch_size // self.sampling_params.n:
+                                non_tensor_batch[k] = v.repeat_interleave(self.sampling_params.n, dim=0)
+                        elif isinstance(v, list):
+                            if len(v) == batch_size // self.sampling_params.n:
+                                non_tensor_batch[k] = [item for item in v for _ in range(self.sampling_params.n)]
+                        # For scalars or mismatched shapes, leave as-is
+                    except Exception:
+                        # Best-effort; leave the field unchanged if repetition fails
+                        pass
 
             seq = torch.cat([idx, response], dim=-1)
 
