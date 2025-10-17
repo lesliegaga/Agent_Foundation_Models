@@ -244,6 +244,9 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, num_re
             # Get length from the initial response mask
             response_length = grpo_calculation_mask.size(1)
             # This mask is the one intended for GRPO
+            # Fallback: if loss_mask is missing, use response_mask to avoid KeyError
+            if "loss_mask" not in data.batch.keys():
+                data.batch["loss_mask"] = data.batch["response_mask"]
             grpo_calculation_mask = data.batch["loss_mask"][:, -response_length:]
         # Call compute_grpo_outcome_advantage with parameters matching its definition
         advantages, returns = core_algos.compute_grpo_outcome_advantage(
