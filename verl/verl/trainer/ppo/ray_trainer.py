@@ -843,15 +843,47 @@ class RayPPOTrainer:
             output_ids = test_output_gen_batch.batch["responses"]
             output_texts = [self.tokenizer.decode(ids, skip_special_tokens=True) for ids in output_ids]
             sample_outputs.extend(output_texts)
-            
-            # 记录验证生成的回答结果
+
+            # 从生成阶段拿到完整对话（若存在），以便提取<code>执行结果
+            conversations = test_output_gen_batch.non_tensor_batch.get("conversations", None)
+
+            # 记录验证生成的回答结果，并在每个<code>块后拼接其紧随的执行结果（来自tool消息），保证一一对应
             self._log_to_file(f"Validation batch {len(sample_outputs)} samples generated")
             for i, (input_text, output_text) in enumerate(zip(sample_inputs[-len(output_texts):], output_texts)):
+                full_text = output_text
+                if conversations is not None and i < len(conversations):
+                    conv = conversations[i]
+                    # 将assistant消息的content拼接起来，并找到其中的<code>块
+                    assistant_contents = [m.get("content", "") for m in conv if m.get("role") == "assistant"]
+                    tool_contents = [m.get("content", "") for m in conv if m.get("role") == "tool"]
+                    # 简单正则提取所有<code>...</code>片段
+                    import re
+                    code_blocks = re.findall(r"<code>([\s\S]*?)</code>", "\n".join(assistant_contents))
+                    # 将tool返回与code块按出现顺序一一对应进行拼接
+                    if code_blocks:
+                        merged = ""
+                        remaining = "\n".join(assistant_contents)
+                        tool_iter = iter(tool_contents)
+                        last_end = 0
+                        for match in re.finditer(r"<code>[\s\S]*?</code>", remaining):
+                            seg = remaining[last_end:match.end()]
+                            merged += seg
+                            # 取下一个tool输出作为对应执行结果
+                            try:
+                                tool_resp = next(tool_iter)
+                                # 在代码块后直接拼接执行结果
+                                merged += f"\n<execution>\n{tool_resp}\n</execution>"
+                            except StopIteration:
+                                pass
+                            last_end = match.end()
+                        merged += remaining[last_end:]
+                        full_text = merged
+
                 self._log_to_file(f"Validation Sample {i+1}:")
                 self._log_to_file(f"  Input: {input_text[:200]}...")
-                self._log_to_file(f"  Output: {output_text[:200]}...")
-                if len(output_text) > 200:
-                    self._log_to_file(f"  Output (full): {output_text}")
+                self._log_to_file(f"  Output: {full_text[:200]}...")
+                if len(full_text) > 200:
+                    self._log_to_file(f"  Output (full): {full_text}")
                 self._log_to_file("  " + "="*50)
 
             test_batch = test_batch.union(test_output_gen_batch)

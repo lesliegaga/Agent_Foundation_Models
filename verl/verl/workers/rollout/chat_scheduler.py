@@ -196,7 +196,8 @@ class ToolCompletionCallback(CompletionCallback):
         )
 
         num_turns = np.array([len(conversation) for conversation in batch_conversations], dtype=np.int32)
-        return DataProto(batch=batch, non_tensor_batch={"__num_turns__": num_turns})
+        # 将完整对话返回，便于下游日志在<code>块后拼接对应的执行结果
+        return DataProto(batch=batch, non_tensor_batch={"__num_turns__": num_turns, "conversations": batch_conversations})
 
     def _mask_out_tools_calling_tokens(
         self,
