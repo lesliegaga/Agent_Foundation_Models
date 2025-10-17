@@ -149,7 +149,7 @@ def parallel_compute_score(
     format_fn_type = 'no_penalty',
     context_max_response_length: int = 8192, 
     timeout=3, 
-    max_workers=48,
+    max_workers=8,  # 减少worker数量，避免资源竞争
     output_file_dir=None
     ):
 
@@ -171,9 +171,14 @@ def parallel_compute_score(
         }
         results = {}
         metadata = {}
-        for future in as_completed(futures):
-            index = futures[future]
-            results[index] = future.result()
+        for future in as_completed(futures, timeout=timeout * len(response_str)):
+            try:
+                index = futures[future]
+                results[index] = future.result()
+            except Exception as e:
+                index = futures[future]
+                print(f"[AFMRewardManager] Error processing sample {index}: {e}")
+                results[index] = 0.0  # 默认分数
 
     return [results[i] for i in range(len(response_str))]
 

@@ -843,21 +843,52 @@ class RayPPOTrainer:
             output_ids = test_output_gen_batch.batch["responses"]
             output_texts = [self.tokenizer.decode(ids, skip_special_tokens=True) for ids in output_ids]
             sample_outputs.extend(output_texts)
+            
+            # 记录验证生成的回答结果
+            self._log_to_file(f"Validation batch {len(sample_outputs)} samples generated")
+            for i, (input_text, output_text) in enumerate(zip(sample_inputs[-len(output_texts):], output_texts)):
+                self._log_to_file(f"Validation Sample {i+1}:")
+                self._log_to_file(f"  Input: {input_text[:200]}...")
+                self._log_to_file(f"  Output: {output_text[:200]}...")
+                if len(output_text) > 200:
+                    self._log_to_file(f"  Output (full): {output_text}")
+                self._log_to_file("  " + "="*50)
 
             test_batch = test_batch.union(test_output_gen_batch)
 
             # evaluate using reward_function
-            result = self.val_reward_fn(test_batch, return_dict=True)
-            reward_tensor = result["reward_tensor"]
-            scores = reward_tensor.sum(-1).cpu().tolist()
-            sample_scores.extend(scores)
+            self._log_to_file("Starting reward computation for validation batch...")
+            try:
+                result = self.val_reward_fn(test_batch, return_dict=True)
+                reward_tensor = result["reward_tensor"]
+                scores = reward_tensor.sum(-1).cpu().tolist()
+                sample_scores.extend(scores)
+                
+                # 记录reward计算结果
+                self._log_to_file(f"Reward computation completed. Scores: {scores}")
+                self._log_to_file(f"Score statistics: min={min(scores):.4f}, max={max(scores):.4f}, mean={sum(scores)/len(scores):.4f}")
 
-            reward_extra_infos_dict["reward"].extend(scores)
-            if "reward_extra_info" in result:
-                for key, lst in result["reward_extra_info"].items():
-                    reward_extra_infos_dict[key].extend(lst)
+                reward_extra_infos_dict["reward"].extend(scores)
+                if "reward_extra_info" in result:
+                    for key, lst in result["reward_extra_info"].items():
+                        reward_extra_infos_dict[key].extend(lst)
+                        self._log_to_file(f"Reward extra info - {key}: {len(lst)} items")
+                        
+            except Exception as e:
+                self._log_to_file(f"Error in reward computation: {e}")
+                import traceback
+                self._log_to_file(f"Traceback: {traceback.format_exc()}")
+                # 设置默认分数
+                default_scores = [0.0] * len(output_texts)
+                sample_scores.extend(default_scores)
+                reward_extra_infos_dict["reward"].extend(default_scores)
 
-            data_source_lst.append(test_batch.non_tensor_batch.get("data_source", ["unknown"] * reward_tensor.shape[0]))
+            # 获取reward_tensor的形状信息
+            if 'reward_tensor' in locals():
+                reward_shape = reward_tensor.shape[0]
+            else:
+                reward_shape = len(output_texts)
+            data_source_lst.append(test_batch.non_tensor_batch.get("data_source", ["unknown"] * reward_shape))
 
             batch_data_sources = test_batch.non_tensor_batch.get("data_source", ["unknown"] * len(test_batch))  
             batch_ground_truths = [item.non_tensor_batch["reward_model"].get("ground_truth", None) for item in test_batch]  

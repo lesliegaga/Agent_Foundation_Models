@@ -113,7 +113,7 @@ export TORCH_NCCL_AVOID_RECORD_STREAMS=1
 export SGLANG_FORCE_EAGER=1
 export VERL_DISABLE_CUDA_GRAPH=1
 TRAIN_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"   # your train dataset
-VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset.parquet"
+VAL_DATASETS="${CURRENT_DIR}/amap_search_rag_AFM-CodeAgent-RL-Dataset_20250924165348/CodeAgentRLDataset_val_100.parquet"
 # =====================================================================================================================
 #                                      Tool
 # =====================================================================================================================
@@ -241,6 +241,31 @@ if [ -f "$TRAIN_DATASETS" ]; then
 else
     echo "[train_sh] ✗ ERROR: Training dataset not found: $TRAIN_DATASETS"
     exit 1
+fi
+
+# 创建验证数据集（如果不存在）
+echo "[train_sh] Checking validation dataset..."
+if [ ! -f "$VAL_DATASETS" ]; then
+    echo "[train_sh] Validation dataset not found, creating from training dataset..."
+    echo "[train_sh] Creating validation dataset with 100 samples..."
+    
+    # 调用Python脚本创建验证数据集
+    python3 "${CURRENT_DIR}/AFM/train/code_agent/rl/create_val_dataset.py" \
+        --input "$TRAIN_DATASETS" \
+        --output "$VAL_DATASETS" \
+        --num_samples 100 \
+        --random_seed 42
+    
+    if [ $? -eq 0 ]; then
+        echo "[train_sh] ✓ Validation dataset created successfully: $VAL_DATASETS"
+        echo "[train_sh] Validation dataset size: $(du -sh "$VAL_DATASETS" 2>/dev/null || echo 'Unknown')"
+    else
+        echo "[train_sh] ✗ ERROR: Failed to create validation dataset"
+        exit 1
+    fi
+else
+    echo "[train_sh] ✓ Validation dataset already exists: $VAL_DATASETS"
+    echo "[train_sh] Validation dataset size: $(du -sh "$VAL_DATASETS" 2>/dev/null || echo 'Unknown')"
 fi
 
 # 创建增强的worker和内存监控脚本
