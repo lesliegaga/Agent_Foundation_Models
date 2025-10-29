@@ -137,6 +137,14 @@ class DataArguments:
         default=False,
         metadata={"help": "Whether or not to ignore the observation in the labels."},
     )
+    enable_thinking_mode: bool = field(
+        default=False,
+        metadata={"help": "Whether to enable thinking mode for reasoning models (separate think/answer loss calculation)."},
+    )
+    thinking_separator: str = field(
+        default="</think>\n",
+        metadata={"help": "Separator between thinking and answer parts."},
+    )
 
     def __post_init__(self):
         def split_arg(arg):

@@ -34,6 +34,7 @@ from .processor import (
     IgnoreObsPairwiseDatasetProcessor,
     PretrainDatasetProcessor,
     SupervisedDatasetProcessor,
+    ThinkingSupervisedDatasetProcessor,
     UnsupervisedDatasetProcessor,
     IgnoreObsSupervisedDatasetProcessor
 )
@@ -223,6 +224,8 @@ def _get_dataset_processor(
             dataset_processor_class = PackedSupervisedDatasetProcessor
         elif data_args.ignore_observation:
             dataset_processor_class = IgnoreObsSupervisedDatasetProcessor
+        elif data_args.enable_thinking_mode:
+            dataset_processor_class = ThinkingSupervisedDatasetProcessor
         else:
             dataset_processor_class = SupervisedDatasetProcessor
 

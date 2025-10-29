@@ -20,6 +20,7 @@ from .pairwise import PairwiseDatasetProcessor, IgnoreObsPairwiseDatasetProcesso
 from .pretrain import PretrainDatasetProcessor
 from .processor_utils import DatasetProcessor
 from .supervised import PackedSupervisedDatasetProcessor, SupervisedDatasetProcessor, IgnoreObsSupervisedDatasetProcessor
+from .thinking_supervised import ThinkingSupervisedDatasetProcessor
 from .unsupervised import UnsupervisedDatasetProcessor
 
 
@@ -30,5 +31,6 @@ __all__ = [
     "PairwiseDatasetProcessor",
     "PretrainDatasetProcessor",
     "SupervisedDatasetProcessor",
+    "ThinkingSupervisedDatasetProcessor",
     "UnsupervisedDatasetProcessor",
 ]

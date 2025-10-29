@@ -234,6 +234,19 @@ def get_dataset_converter(name: str, dataset_attr: "DatasetAttr", data_args: "Da
     return DATASET_CONVERTERS[name](dataset_attr, data_args)
 
 
+def _preprocess_thinking_format(example: dict[str, Any], data_args: "DataArguments") -> dict[str, Any]:
+    r"""Preprocess thinking format data by merging think and answer into response."""
+    # Check if this is thinking format data (has 'think' and 'answer' fields but no 'response')
+    if "think" in example and "answer" in example and "response" not in example:
+        think_text = str(example.get("think", ""))
+        answer_text = str(example.get("answer", ""))
+        # Merge think and answer into response with separator
+        separator = data_args.thinking_separator if hasattr(data_args, 'thinking_separator') else "</think>\n"
+        example["response"] = f"<think>{think_text}{separator}{answer_text}"
+        logger.info_rank0_once(f"Converted thinking format data: think ({len(think_text)} chars) + answer ({len(answer_text)} chars)")
+    return example
+
+
 def align_dataset(
     dataset: Union["Dataset", "IterableDataset"],
     dataset_attr: "DatasetAttr",
@@ -252,6 +265,20 @@ def align_dataset(
     _audios: []
     """
     column_names = list(next(iter(dataset)).keys())
+    
+    # Preprocess thinking format if enabled
+    if data_args.enable_thinking_mode if hasattr(data_args, 'enable_thinking_mode') else False:
+        kwargs_preprocess = {}
+        if not data_args.streaming:
+            kwargs_preprocess = dict(
+                num_proc=data_args.preprocessing_num_workers,
+                desc="Preprocessing thinking format",
+            )
+        dataset = dataset.map(
+            lambda example: _preprocess_thinking_format(example, data_args),
+            batched=False,
+            **kwargs_preprocess,
+        )
     kwargs = {}
     if not data_args.streaming:
         kwargs = dict(

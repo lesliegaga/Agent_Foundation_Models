@@ -8,6 +8,13 @@
   "code_agent_sft": {
     "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/amap_search_rag_AFM-CodeAgent-SFT-Dataset_20250924164316/CodeAgentSFTDataset.json"
   },
+  "story_agent_thinking_sft": {
+    "file_name": "/home/tongyan.zjy/workspace/git/Agent_Foundation_Models/AFM/data/thinking_sft_demo.jsonl",
+    "columns": {
+      "prompt": "prompt",
+      "response": "response"
+    }
+  },
   "identity": {
     "file_name": "identity.json"
   },

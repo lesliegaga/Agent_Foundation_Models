@@ -100,7 +100,64 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
     @override
     def compute_loss(self, model, inputs, *args, **kwargs):
-        return super().compute_loss(model, inputs, *args, **kwargs)
+        # Check if we're in thinking mode
+        answer_start_positions = inputs.pop("answer_start_positions", None)
+        
+        if answer_start_positions is None:
+            # Regular mode, use original logic
+            return super().compute_loss(model, inputs, *args, **kwargs)
+        
+        # Thinking mode - compute separate losses for think and answer
+        import torch
+        from torch.nn import CrossEntropyLoss
+        
+        outputs = model(**inputs)
+        logits = outputs.logits
+        labels = inputs["labels"]
+        
+        # Calculate per-token loss
+        shift_logits = logits[..., :-1, :].contiguous()
+        shift_labels = labels[..., 1:].contiguous()
+        loss_fct = CrossEntropyLoss(reduction='none')
+        loss_per_token = loss_fct(
+            shift_logits.view(-1, shift_logits.size(-1)),
+            shift_labels.view(-1)
+        )
+        
+        # Calculate total loss
+        valid_mask = (shift_labels != IGNORE_INDEX).view(-1).float()
+        total_loss = (loss_per_token * valid_mask).sum() / (valid_mask.sum() + 1e-8)
+        
+        # Calculate answer-only loss
+        answer_mask = self._create_answer_mask(shift_labels.size(), answer_start_positions, shift_labels.device)
+        answer_loss = (loss_per_token * answer_mask.view(-1)).sum() / (answer_mask.sum() + 1e-8)
+        
+        # Calculate answer accuracy
+        preds = shift_logits.argmax(dim=-1)
+        # Only count correct predictions in answer region where label is not IGNORE_INDEX
+        answer_correct = ((preds == shift_labels) * answer_mask * (shift_labels != IGNORE_INDEX)).float().sum()
+        answer_total = (answer_mask * (shift_labels != IGNORE_INDEX)).float().sum()
+        answer_acc = answer_correct / (answer_total + 1e-8)
+        
+        # Log metrics
+        self.log({
+            "answer_loss": answer_loss.item(),
+            "answer_accuracy": answer_acc.item(),
+        })
+        
+        return total_loss
+    
+    def _create_answer_mask(self, shape, answer_starts, device):
+        """Create mask for answer region."""
+        batch_size, seq_len = shape
+        mask = torch.zeros((batch_size, seq_len), device=device, dtype=torch.float32)
+        for i in range(batch_size):
+            start_pos = answer_starts[i].item() if isinstance(answer_starts, torch.Tensor) else answer_starts[i]
+            # Shift by 1 because we're working with shift_labels
+            start_pos = max(0, start_pos - 1)
+            if start_pos < seq_len:
+                mask[i, start_pos:] = 1.0
+        return mask
 
     @override
     def prediction_step(
