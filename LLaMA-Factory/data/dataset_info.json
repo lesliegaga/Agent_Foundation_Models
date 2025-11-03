@@ -15,6 +15,20 @@
       "response": "response"
     }
   },
+  "story_agent_thinking_sft_train": {
+    "file_name": "/mnt/tongyan.zjy/data/story_room/sft/training_samples_train.jsonl",
+    "columns": {
+      "prompt": "prompt",
+      "response": "response"
+    }
+  },
+  "story_agent_thinking_sft_test": {
+    "file_name": "/mnt/tongyan.zjy/data/story_room/sft/training_samples_test.jsonl",
+    "columns": {
+      "prompt": "prompt",
+      "response": "response"
+    }
+  },
   "identity": {
     "file_name": "identity.json"
   },

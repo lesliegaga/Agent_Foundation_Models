@@ -431,6 +431,10 @@ class FinetuningArguments(
         default=False,
         metadata={"help": "Whether or not to compute the token-level accuracy at evaluation."},
     )
+    eval_on_start: bool = field(
+        default=False,
+        metadata={"help": "Whether or not to evaluate at the very beginning of training (before step 1)."},
+    )
     disable_shuffling: bool = field(
         default=False,
         metadata={"help": "Whether or not to disable the shuffling of the training set."},
