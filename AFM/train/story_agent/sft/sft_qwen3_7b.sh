@@ -55,7 +55,7 @@ finetuning_type=full
 # 基础输出目录，具体实验目录根据训练参数拼接
 OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/AFM-StoryAgent-7B-sft"
 LEARNING_RATE="3e-5"
-BATCH_SIZE=
+BATCH_SIZE=2
 GRADIENT_ACCUMULATION=4
 EPOCHS=2.0
 PRECISION="bf16"
@@ -69,13 +69,11 @@ EVAL_DATASET=story_agent_thinking_sft_test
 TEMPALTE=qwen
 
 # Evaluation settings
-EVAL_STEPS=100  # Evaluate every 100 steps
 EVAL_STRATEGY="steps"  # Can be "steps" or "epoch"
 EVAL_BATCH_SIZE=2
 
 # Logging settings (log train metrics to Swanlab every N steps)
 LOGGING_STEPS=10
-LOGGING_STRATEGY="steps"
 
 # Swanlab
 SWANLAB_API_KEY=ZjDMPe0DCAnwiVUndD5sB
