@@ -74,7 +74,7 @@ EVAL_BATCH_SIZE=2
 
 # Swanlab
 SWANLAB_API_KEY=ZjDMPe0DCAnwiVUndD5sB
-SWANLAB_PROJECT=code_agent_sft
+SWANLAB_PROJECT=story_agent_sft
 
 # 根据训练参数构造实验目录名，参考 web_agent 脚本风格
 EXPERIMENT_ID="exp_lr${LEARNING_RATE}_bs${BATCH_SIZE}_ga${GRADIENT_ACCUMULATION}_ep${EPOCHS}_cl${CUTOFF_LEN}_${PRECISION}"
