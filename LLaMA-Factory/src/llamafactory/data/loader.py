@@ -222,10 +222,11 @@ def _get_dataset_processor(
 
                 OptimizedTypedSequence.__init__ = __init__
             dataset_processor_class = PackedSupervisedDatasetProcessor
+        elif data_args.enable_thinking_mode:
+            # Prioritize thinking mode so we can compute answer metrics; base class will still honor ignore_observation
+            dataset_processor_class = ThinkingSupervisedDatasetProcessor
         elif data_args.ignore_observation:
             dataset_processor_class = IgnoreObsSupervisedDatasetProcessor
-        elif data_args.enable_thinking_mode:
-            dataset_processor_class = ThinkingSupervisedDatasetProcessor
         else:
             dataset_processor_class = SupervisedDatasetProcessor
 
