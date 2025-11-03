@@ -95,6 +95,10 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
             raise ValueError("Template is required for MultiModalDataCollator.")
 
     def __call__(self, features: list[dict[str, Any]]) -> dict[str, "torch.Tensor"]:
+        # Save answer_start_positions before they get filtered out
+        answer_start_positions = [feature.pop("answer_start_positions", None) for feature in features]
+        has_answer_positions = any(pos is not None for pos in answer_start_positions)
+        
         batch_images, batch_videos, batch_audios = [], [], []
         batch_imglens, batch_vidlens, batch_audlens, batch_input_ids = [], [], [], []
         for feature in features:
@@ -214,6 +218,13 @@ class MultiModalDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
             bsz, seq_length = features["input_ids"].shape
             features["position_ids"] = torch.arange(seq_length).long().repeat(bsz, 1)
             return {"data": features, "input_ids": features["input_ids"], "labels": features["labels"]}
+
+        # Add answer_start_positions back if they exist (for thinking mode)
+        if has_answer_positions:
+            features["answer_start_positions"] = torch.tensor(
+                [pos if pos is not None else 0 for pos in answer_start_positions],
+                dtype=torch.long
+            )
 
         return features
 

@@ -55,7 +55,7 @@ finetuning_type=full
 # 基础输出目录，具体实验目录根据训练参数拼接
 OUTPUT_DIR_BASE="/mnt/tongyan.zjy/model_output/AFM/AFM-StoryAgent-7B-sft"
 LEARNING_RATE="3e-5"
-BATCH_SIZE=1
+BATCH_SIZE=
 GRADIENT_ACCUMULATION=4
 EPOCHS=2.0
 PRECISION="bf16"
@@ -72,6 +72,10 @@ TEMPALTE=qwen
 EVAL_STEPS=100  # Evaluate every 100 steps
 EVAL_STRATEGY="steps"  # Can be "steps" or "epoch"
 EVAL_BATCH_SIZE=2
+
+# Logging settings (log train metrics to Swanlab every N steps)
+LOGGING_STEPS=10
+LOGGING_STRATEGY="steps"
 
 # Swanlab
 SWANLAB_API_KEY=ZjDMPe0DCAnwiVUndD5sB
@@ -113,7 +117,8 @@ llamafactory-cli train \
   --learning_rate "$LEARNING_RATE" \
   --num_train_epochs "$EPOCHS" \
   --eval_strategy "$EVAL_STRATEGY" \
-  --eval_steps "$EVAL_STEPS" \
+  --eval_steps "$LOGGING_STEPS" \
+  --logging_steps "$LOGGING_STEPS" \
   --${PRECISION} \
   --save_only_model true \
   --report_to swanlab \
