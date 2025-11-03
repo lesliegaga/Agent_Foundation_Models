@@ -111,7 +111,7 @@ llamafactory-cli train \
   --gradient_accumulation_steps "$GRADIENT_ACCUMULATION" \
   --learning_rate "$LEARNING_RATE" \
   --num_train_epochs "$EPOCHS" \
-  --evaluation_strategy "$EVAL_STRATEGY" \
+  --eval_strategy "$EVAL_STRATEGY" \
   --eval_steps "$EVAL_STEPS" \
   --${PRECISION} \
   --save_only_model true \
