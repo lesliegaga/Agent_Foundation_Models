@@ -4,7 +4,7 @@ set -e
 # 设置日志文件路径
 LOG_DIR="logs"
 mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/code_agent_sft_qwen2.5_7b_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="$LOG_DIR/story_agent_sft_qwen3_7b_$(date +%Y%m%d_%H%M%S).log"
 
 # 重定向所有输出到日志文件
 exec > >(tee -a "$LOG_FILE") 2>&1
