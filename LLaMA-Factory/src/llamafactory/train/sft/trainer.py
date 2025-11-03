@@ -139,10 +139,14 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         answer_total = (answer_mask * (shift_labels != IGNORE_INDEX)).float().sum()
         answer_acc = answer_correct / (answer_total + 1e-8)
         
-        # Log metrics
+        # Determine prefix based on training mode
+        # model.training is True during training, False during evaluation
+        prefix = "train_" if model.training else "eval_"
+        
+        # Log metrics with appropriate prefix
         self.log({
-            "answer_loss": answer_loss.item(),
-            "answer_accuracy": answer_acc.item(),
+            f"{prefix}answer_loss": answer_loss.item(),
+            f"{prefix}answer_accuracy": answer_acc.item(),
         })
         
         return total_loss
