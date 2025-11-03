@@ -243,7 +243,9 @@ def _preprocess_thinking_format(example: dict[str, Any], data_args: "DataArgumen
         # Merge think and answer into response with separator
         separator = data_args.thinking_separator if hasattr(data_args, 'thinking_separator') else "</think>\n"
         example["response"] = f"<think>{think_text}{separator}{answer_text}"
-        logger.info_rank0_once(f"Converted thinking format data: think ({len(think_text)} chars) + answer ({len(answer_text)} chars)")
+        logger.info_rank0(
+            f"Converted thinking format data: think ({len(think_text)} chars) + answer ({len(answer_text)} chars)"
+        )
     return example
 
 
