@@ -23,7 +23,6 @@ from ...extras.logging import get_logger
 from ...extras.misc import calculate_tps
 from ...extras.ploting import plot_loss
 from ...model import load_model, load_tokenizer
-from ..callbacks_eval_on_start import EvalOnStartCallback
 from ..trainer_utils import create_modelcard_and_push
 from .metric import ComputeAccuracy, ComputeSimilarity, eval_logit_processor
 from .trainer import CustomSeq2SeqTrainer
@@ -79,11 +78,7 @@ def run_sft(
     gen_kwargs["eos_token_id"] = [tokenizer.eos_token_id] + tokenizer.additional_special_tokens_ids
     gen_kwargs["pad_token_id"] = tokenizer.pad_token_id
 
-    # Add EvalOnStartCallback if requested
-    if finetuning_args.eval_on_start and training_args.do_eval:
-        logger.info("EvalOnStartCallback enabled - will evaluate at the beginning of training")
-        callbacks = callbacks or []
-        callbacks.append(EvalOnStartCallback())
+    # Use built-in eval_on_start from transformers via TrainingArguments
 
     # Initialize our Trainer
     trainer = CustomSeq2SeqTrainer(
