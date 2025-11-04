@@ -571,7 +571,14 @@ class ComprehensiveEvaluator:
         
         for item in tqdm(data, desc="NQ Evaluation"):
             question = item["question"]
-            golden_answers = item["target"] if isinstance(item["target"], list) else [item["target"]]
+            # 兼容不同字段：优先使用 target，其次使用 answer
+            if "target" in item:
+                golden_field = item["target"]
+            elif "answer" in item:
+                golden_field = item["answer"]
+            else:
+                golden_field = []
+            golden_answers = golden_field if isinstance(golden_field, list) else [golden_field]
             
             # 构建 prompt
             prompt = f"Question: {question}\nPlease provide a concise answer.\nAnswer:"
