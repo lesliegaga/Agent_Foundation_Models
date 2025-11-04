@@ -35,7 +35,7 @@ python3 AFM/evaluation/comprehensive_eval.py \
     --max_length 2048 \
     --nq_file "$NQ_FILE" \
     --story_file "$STORY_FILE" \
-    --max_samples 50
+    --max_samples 10
 
 echo ""
 echo "==================================================================================================="
