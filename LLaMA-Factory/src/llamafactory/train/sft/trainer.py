@@ -103,6 +103,9 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         # Check if we're in thinking mode
         answer_start_positions = inputs.pop("answer_start_positions", None)
         
+        # Check if caller wants outputs
+        return_outputs = kwargs.get("return_outputs", False)
+        
         if answer_start_positions is None:
             # Regular mode, use original logic
             return super().compute_loss(model, inputs, *args, **kwargs)
@@ -149,6 +152,9 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
             f"{prefix}answer_accuracy": answer_acc.item(),
         })
         
+        # Return loss with outputs if requested (needed for evaluation)
+        if return_outputs:
+            return (total_loss, outputs)
         return total_loss
     
     def _create_answer_mask(self, shape, answer_starts, device):
