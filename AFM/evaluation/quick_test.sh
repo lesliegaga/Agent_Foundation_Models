@@ -25,6 +25,10 @@ echo "模型: $MODEL_PATH"
 echo "输出: $OUTPUT_DIR"
 echo ""
 
+# CUDA_VISIBLE_DEVICES=0,1,2,3
+CUDA_VISIBLE_DEVICES=4,5,6,7
+export CUDA_VISIBLE_DEVICES
+
 # 运行快速测试
 python3 AFM/evaluation/comprehensive_eval.py \
     --model_path "$MODEL_PATH" \
