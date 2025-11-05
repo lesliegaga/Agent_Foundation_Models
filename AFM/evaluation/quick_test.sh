@@ -32,7 +32,7 @@ python3 AFM/evaluation/comprehensive_eval.py \
     --datasets story nq \
     --n_shot 3 \
     --batch_size 2 \
-    --max_length 2048 \
+    --max_length 16384 \
     --nq_file "$NQ_FILE" \
     --story_file "$STORY_FILE" \
     --max_samples 10
