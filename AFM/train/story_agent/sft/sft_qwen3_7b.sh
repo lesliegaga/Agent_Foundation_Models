@@ -46,8 +46,8 @@ MODEL_PATH="/mnt/tongyan.zjy/openlm/model/Qwen/Qwen3-4B-Thinking-2507"
 export NNODES=1 # Nodes number for training
 NODE_RANK=${RANK:-0}
 export NODE_RANK
-# CUDA_VISIBLE_DEVICES=0,1,2,3
-CUDA_VISIBLE_DEVICES=4,5,6,7
+ CUDA_VISIBLE_DEVICES=0,1,2,3
+#CUDA_VISIBLE_DEVICES=4,5,6,7
 export CUDA_VISIBLE_DEVICES
 
 STAGE=sft
